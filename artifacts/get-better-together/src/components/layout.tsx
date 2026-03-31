@@ -19,18 +19,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
             Get Better Together
           </Link>
           
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => setLocation('/?home=1')}>
-              <Home className="w-5 h-5" />
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => setLocation('/?home=1')}>
+              <Home className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => setLocation('/challenge/new')}>
-              <Plus className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => setLocation('/challenge/new')}>
+              <Plus className="w-4 h-4" />
             </Button>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full bg-secondary/50 hover:bg-secondary">
-                  <User className="w-5 h-5" />
+                <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full hover:bg-primary/10 hover:text-primary transition-colors">
+                  <User className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48 rounded-xl">
