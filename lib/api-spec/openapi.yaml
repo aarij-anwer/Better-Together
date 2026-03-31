@@ -660,7 +660,7 @@ components:
 
     ChallengeWithProgress:
       type: object
-      required: [id, slug, title, activityType, unit, type, targetValue, durationDays, startDate, createdById, inviteCode, createdAt, state, totalLogged, todayLogged, todayTarget, participantCount]
+      required: [id, slug, title, activityType, unit, type, targetValue, durationDays, startDate, createdById, inviteCode, createdAt, state, totalLogged, todayLogged, todayTarget, currentDay, participantCount]
       properties:
         id:
           type: string
@@ -697,6 +697,8 @@ components:
         todayLogged:
           type: integer
         todayTarget:
+          type: integer
+        currentDay:
           type: integer
         participantCount:
           type: integer

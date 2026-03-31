@@ -149,6 +149,7 @@ export const ListChallengesResponseItem = zod.object({
   totalLogged: zod.number(),
   todayLogged: zod.number(),
   todayTarget: zod.number(),
+  currentDay: zod.number(),
   participantCount: zod.number(),
 });
 export const ListChallengesResponse = zod.array(ListChallengesResponseItem);

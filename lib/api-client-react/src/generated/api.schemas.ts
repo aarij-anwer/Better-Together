@@ -164,6 +164,7 @@ export interface ChallengeWithProgress {
   totalLogged: number;
   todayLogged: number;
   todayTarget: number;
+  currentDay: number;
   participantCount: number;
 }
 

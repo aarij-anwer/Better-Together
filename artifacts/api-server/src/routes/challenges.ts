@@ -14,7 +14,7 @@ import {
   computeAllocatedTotal,
   computeStreak,
 } from "../lib/challengeUtils";
-import { computeChallengeProgress } from "../lib/utils";
+import { computeChallengeProgress, getCurrentDay } from "../lib/utils";
 
 const router: IRouter = Router();
 
@@ -108,6 +108,7 @@ router.get("/challenges", async (req, res): Promise<void> => {
         totalLogged: progress.totalLogged,
         todayLogged: progress.todayLogged,
         todayTarget: progress.todayTarget,
+        currentDay: getCurrentDay(challenge.startDate, challenge.durationDays),
         participantCount: participantCount[0]?.count ?? 0,
       };
     })

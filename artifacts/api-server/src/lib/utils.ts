@@ -1,5 +1,14 @@
 import { computeDailyProgress } from "./challengeUtils";
 
+export function getCurrentDay(startDate: Date, durationDays: number): number {
+  const start = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffMs = today.getTime() - start.getTime();
+  const rawDay = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+  return Math.max(1, Math.min(rawDay, durationDays));
+}
+
 export interface ChallengeProgressInput {
   logs: Array<{ date: Date; value: number }>;
   startDate: Date;

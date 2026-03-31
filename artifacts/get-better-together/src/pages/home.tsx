@@ -137,29 +137,14 @@ function Dashboard() {
                      {c.state === 'active' ? 'Active' : c.state === 'completed' ? 'Completed' : 'Upcoming'}
                    </span>
                 </div>
-                {(() => {
-                  const todayProgress = `${c.todayLogged}/${c.todayTarget} ${c.unit}`;
-                  const todayPercent = c.todayTarget > 0 ? Math.min(100, (c.todayLogged / c.todayTarget) * 100) : 0;
-                  const start = new Date(c.startDate);
-                  const now = new Date();
-                  const startDay = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-                  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-                  const diffMs = today.getTime() - startDay.getTime();
-                  const rawDay = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
-                  const currentDay = Math.max(1, Math.min(rawDay, c.durationDays));
-                  return (
-                    <>
-                      <div className="flex items-center justify-between text-sm font-semibold text-muted-foreground mb-2">
-                        <span>Day {currentDay} of {c.durationDays}</span>
-                        <span className="font-bold text-foreground">{todayProgress}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <Progress value={todayPercent} className="h-3 flex-1 rounded-full" />
-                        <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
-                    </>
-                  );
-                })()}
+                <div className="flex items-center justify-between text-sm font-semibold text-muted-foreground mb-2">
+                  <span>Day {c.currentDay} of {c.durationDays}</span>
+                  <span className="font-bold text-foreground">{c.todayLogged}/{c.todayTarget} {c.unit}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Progress value={c.todayTarget > 0 ? Math.min(100, (c.todayLogged / c.todayTarget) * 100) : 0} className="h-3 flex-1 rounded-full" />
+                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
               </Card>
             ))}
           </div>
