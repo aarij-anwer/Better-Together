@@ -46,20 +46,21 @@ export default function ChallengeDetail() {
     if (challenge.state === 'not_started') return;
     const previousTotal = userProgress.totalLogged;
     const target = userProgress.totalTarget;
-    const alreadyCompleted = target > 0 && previousTotal >= target;
-    const willComplete = target > 0 && !alreadyCompleted && previousTotal + value >= target;
+    const wasAlreadyComplete = target > 0 && previousTotal >= target;
 
     logMutation.mutate(
       { id: challenge.slug || challenge.id, data: { value } },
       {
-        onSuccess: () => {
+        onSuccess: (responseData) => {
           queryClient.invalidateQueries({ queryKey: getGetChallengeQueryKey(challenge.slug || challenge.id) });
           queryClient.invalidateQueries({ queryKey: getGetProgressQueryKey(challenge.slug || challenge.id) });
           queryClient.invalidateQueries({ queryKey: getListChallengesQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
-          if (alreadyCompleted) {
+          const newTotal = (responseData as { totalLogged?: number })?.totalLogged ?? previousTotal + value;
+          const isNowComplete = target > 0 && newTotal >= target;
+          if (wasAlreadyComplete) {
             toast.info("You've already completed this challenge! Extra reps won't count toward the total.");
-          } else if (willComplete) {
+          } else if (isNowComplete) {
             toast.success("Challenge target reached! Amazing work! 🎉");
           } else {
             toast.success(`Logged ${value} ${challenge.unit}`);
