@@ -141,6 +141,17 @@ router.post("/challenges", async (req, res): Promise<void> => {
   const shouldRestDay = restDayEnabled ?? false;
   let resolvedDailyTargets: number[] | null = providedDailyTargets ?? null;
 
+  if (resolvedDailyTargets) {
+    if (resolvedDailyTargets.length !== durationDays) {
+      res.status(400).json({ error: "dailyTargets length must match durationDays" });
+      return;
+    }
+    if (resolvedDailyTargets.some((t) => !Number.isInteger(t) || t < 0)) {
+      res.status(400).json({ error: "dailyTargets must contain non-negative integers" });
+      return;
+    }
+  }
+
   if (!resolvedDailyTargets && (shouldRandomize || shouldRestDay)) {
     resolvedDailyTargets = generateDailyTargets({
       baseTarget: targetValue,

@@ -56,19 +56,40 @@ export function generateDailyTargets(
     }
   }
 
-  const activeDays = targets.filter((t) => t > 0);
-  if (activeDays.length > 0 && randomizeReps) {
-    const desiredTotal = baseTarget * activeDays.length;
-    const currentTotal = targets.reduce((sum, t) => sum + t, 0);
-    const diff = desiredTotal - currentTotal;
+  const activeIndices = targets
+    .map((t, i) => (t > 0 ? i : -1))
+    .filter((i) => i >= 0);
 
-    const activeIndices = targets
-      .map((t, i) => (t > 0 ? i : -1))
-      .filter((i) => i >= 0);
-    const lastActiveIdx = activeIndices[activeIndices.length - 1];
-    if (lastActiveIdx !== undefined) {
-      const adjusted = targets[lastActiveIdx] + diff;
-      targets[lastActiveIdx] = Math.max(1, adjusted);
+  if (activeIndices.length > 0 && randomizeReps) {
+    const desiredTotal = baseTarget * activeIndices.length;
+    let currentTotal = targets.reduce((sum, t) => sum + t, 0);
+    let remaining = desiredTotal - currentTotal;
+
+    for (let pass = 0; pass < 10 && Math.abs(remaining) > 0; pass++) {
+      const indices =
+        remaining > 0
+          ? [...activeIndices].reverse()
+          : [...activeIndices];
+
+      for (const idx of indices) {
+        if (remaining === 0) break;
+        const current = targets[idx];
+        if (remaining > 0) {
+          const room = maxTarget - current;
+          if (room > 0) {
+            const add = Math.min(remaining, room);
+            targets[idx] = current + add;
+            remaining -= add;
+          }
+        } else {
+          const room = current - Math.max(minTarget, 1);
+          if (room > 0) {
+            const sub = Math.min(-remaining, room);
+            targets[idx] = current - sub;
+            remaining += sub;
+          }
+        }
+      }
     }
   }
 
