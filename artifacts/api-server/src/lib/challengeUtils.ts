@@ -61,6 +61,7 @@ export function computeDailyProgress(
   targetValue: number
 ): DayProgressItem[] {
   const start = startOfDay(startDate);
+  const today = toDateString(new Date());
 
   const days: DayProgressItem[] = [];
   for (let i = 0; i < durationDays; i++) {
@@ -75,33 +76,33 @@ export function computeDailyProgress(
   }
 
   const dayMap = new Map<string, number>();
-  for (const day of days) {
-    dayMap.set(day.date, days.indexOf(day));
+  for (let i = 0; i < days.length; i++) {
+    dayMap.set(days[i].date, i);
   }
 
-  for (const log of logs) {
+  const sortedLogs = [...logs].sort((a, b) => a.date.getTime() - b.date.getTime());
+
+  for (const log of sortedLogs) {
+    let remaining = log.value;
     const logDate = toDateString(log.date);
-    const idx = dayMap.get(logDate);
-    if (idx !== undefined) {
-      days[idx].logged += log.value;
+    const primaryIdx = dayMap.get(logDate);
+
+    if (primaryIdx !== undefined) {
+      const canFill = Math.max(0, targetValue - days[primaryIdx].logged);
+      const fill = Math.min(remaining, canFill);
+      days[primaryIdx].logged += fill;
+      remaining -= fill;
     }
-  }
 
-  const today = toDateString(new Date());
-  const todayIdx = dayMap.get(today);
-
-  if (todayIdx !== undefined) {
-    let overflow = Math.max(0, days[todayIdx].logged - targetValue);
-    if (overflow > 0) {
-      days[todayIdx].logged = targetValue;
-
-      for (let i = 0; i < durationDays && overflow > 0; i++) {
-        if (i === todayIdx) continue;
+    if (remaining > 0) {
+      for (let i = 0; i < durationDays; i++) {
+        if (days[i].date > today) break;
         const canFill = Math.max(0, targetValue - days[i].logged);
         if (canFill > 0) {
-          const fill = Math.min(overflow, canFill);
+          const fill = Math.min(remaining, canFill);
           days[i].logged += fill;
-          overflow -= fill;
+          remaining -= fill;
+          if (remaining <= 0) break;
         }
       }
     }
@@ -113,6 +114,16 @@ export function computeDailyProgress(
   }
 
   return days;
+}
+
+export function computeAllocatedTotal(
+  logs: Array<{ date: Date; value: number }>,
+  startDate: Date,
+  durationDays: number,
+  targetValue: number
+): number {
+  const days = computeDailyProgress(logs, startDate, durationDays, targetValue);
+  return days.reduce((sum, d) => sum + d.logged, 0);
 }
 
 export function computeStreak(days: DayProgressItem[], startDate: Date): number {

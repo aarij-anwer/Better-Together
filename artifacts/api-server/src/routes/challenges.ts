@@ -10,6 +10,7 @@ import {
   generateInviteCode,
   getChallengeState,
   computeDailyProgress,
+  computeAllocatedTotal,
   computeStreak,
 } from "../lib/challengeUtils";
 
@@ -373,8 +374,8 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
 
   if (challenge.type === "daily") {
     const maxTotal = challenge.targetValue * challenge.durationDays;
-    const currentTotal = existingLogs.reduce((sum, l) => sum + l.value, 0);
-    const remaining = maxTotal - currentTotal;
+    const allocatedTotal = computeAllocatedTotal(existingLogs, challenge.startDate, challenge.durationDays, challenge.targetValue);
+    const remaining = maxTotal - allocatedTotal;
     if (remaining <= 0) {
       res.status(400).json({ error: "Challenge fully completed, no more progress can be logged" });
       return;
@@ -527,6 +528,21 @@ async function buildLeaderboard(challenge: typeof challengesTable.$inferSelect) 
 
   const state = getChallengeState(challenge.startDate, challenge.durationDays);
 
+  if (state === "not_started") {
+    return participants.map((p) => {
+      const userName = [p.firstName, p.lastName].filter(Boolean).join(" ") || "User";
+      return {
+        userId: p.userId,
+        userName,
+        profileImageUrl: p.profileImageUrl,
+        totalLogged: 0,
+        percentComplete: 0,
+        rank: 0,
+        streak: 0,
+      };
+    });
+  }
+
   const entries = await Promise.all(
     participants.map(async (p) => {
       const logs = await db
@@ -546,7 +562,7 @@ async function buildLeaderboard(challenge: typeof challengesTable.$inferSelect) 
       let totalLogged: number;
       let streak = 0;
 
-      if (challenge.type === "daily" && state !== "not_started") {
+      if (challenge.type === "daily") {
         const dayProgress = computeDailyProgress(logs, challenge.startDate, challenge.durationDays, challenge.targetValue);
         totalLogged = dayProgress.reduce((sum, d) => sum + d.logged, 0);
         streak = computeStreak(dayProgress, challenge.startDate);
