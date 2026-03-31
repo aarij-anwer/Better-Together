@@ -19,7 +19,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             Get Better Together
           </Link>
           
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-0">
             <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => setLocation('/?home=1')}>
               <Home className="w-4 h-4" />
             </Button>
