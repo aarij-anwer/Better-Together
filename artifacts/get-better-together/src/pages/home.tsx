@@ -1,13 +1,16 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
-import { useGetDashboardSummary, useListChallenges, getGetDashboardSummaryQueryKey, getListChallengesQueryKey } from "@workspace/api-client-react";
+import { useGetDashboardSummary, useListChallenges, useJoinChallenge, getGetDashboardSummaryQueryKey, getListChallengesQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Trophy, Activity, Clock, ArrowRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Plus, Trophy, Activity, Clock, ArrowRight, Link2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { formatActivityName } from "@/lib/constants";
+import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 function Welcome({ onLogin }: { onLogin: () => void }) {
   return (
@@ -37,18 +40,36 @@ function Dashboard() {
   const { data: summary, isLoading: isSummaryLoading } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
   const { data: challenges, isLoading: isChallengesLoading } = useListChallenges({ query: { queryKey: getListChallengesQueryKey() } });
   const [, setLocation] = useLocation();
+  const [inviteInput, setInviteInput] = useState("");
+  const joinMutation = useJoinChallenge();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (challenges) {
       const active = challenges.filter(c => c.state === 'active');
       if (active.length === 1) {
-        if (!sessionStorage.getItem('dashboard_redirected')) {
-          sessionStorage.setItem('dashboard_redirected', 'true');
-          setLocation(`/challenge/${active[0].id}`);
-        }
+        setLocation(`/challenge/${active[0].id}`);
       }
     }
   }, [challenges, setLocation]);
+
+  const handleJoinByCode = () => {
+    const code = inviteInput.trim();
+    if (!code) return;
+    const inviteCode = code.includes("/join/") ? code.split("/join/")[1] : code;
+    joinMutation.mutate({ inviteCode }, {
+      onSuccess: (res) => {
+        toast.success("Joined challenge successfully!");
+        queryClient.invalidateQueries({ queryKey: getListChallengesQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+        setInviteInput("");
+        setLocation(`/challenge/${res.challengeId}`);
+      },
+      onError: () => {
+        toast.error("Could not join. Check the code and try again.");
+      }
+    });
+  };
 
   if (isSummaryLoading || isChallengesLoading) return (
     <Layout>
@@ -61,25 +82,56 @@ function Dashboard() {
   return (
     <Layout>
       <div className="max-w-3xl mx-auto w-full px-4 py-8">
-        <div className="flex items-center gap-6 mb-10 bg-card p-6 md:p-8 rounded-[2rem] border shadow-sm">
-          <div>
-            <div className="text-sm font-bold text-muted-foreground mb-1 uppercase tracking-wider">Today</div>
-            <div className="text-4xl font-black tracking-tight">{summary?.totalCompletedToday || 0} <span className="text-xl text-muted-foreground font-semibold">logs</span></div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
+          <div className="bg-card p-5 rounded-2xl border shadow-sm">
+            <div className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">Today</div>
+            <div className="text-3xl font-black tracking-tight">{summary?.totalCompletedToday || 0}</div>
+            <div className="text-sm text-muted-foreground font-semibold">logged</div>
           </div>
-          <div className="w-px h-16 bg-border mx-2"></div>
-          <div>
-            <div className="text-sm font-bold text-muted-foreground mb-1 uppercase tracking-wider">Active</div>
-            <div className="text-4xl font-black tracking-tight">{summary?.activeChallenges || 0} <span className="text-xl text-muted-foreground font-semibold">challenges</span></div>
+          <div className="bg-card p-5 rounded-2xl border shadow-sm">
+            <div className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">Done Today</div>
+            <div className="text-3xl font-black tracking-tight">{summary?.completedChallengesToday || 0}</div>
+            <div className="text-sm text-muted-foreground font-semibold">completed</div>
+          </div>
+          <div className="bg-card p-5 rounded-2xl border shadow-sm">
+            <div className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">Active</div>
+            <div className="text-3xl font-black tracking-tight">{summary?.activeChallenges || 0}</div>
+            <div className="text-sm text-muted-foreground font-semibold">challenges</div>
+          </div>
+          <div className="bg-card p-5 rounded-2xl border shadow-sm">
+            <div className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">Total</div>
+            <div className="text-3xl font-black tracking-tight">{summary?.totalChallenges || 0}</div>
+            <div className="text-sm text-muted-foreground font-semibold">challenges</div>
           </div>
         </div>
 
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-black tracking-tight">Your Challenges</h2>
-          {challenges && challenges.length > 0 && (
+          <div className="flex items-center gap-2">
             <Button onClick={() => setLocation('/challenge/new')} variant="outline" className="rounded-full h-10 px-4 font-bold border-2">
               <Plus className="w-4 h-4 mr-2" /> New
             </Button>
-          )}
+          </div>
+        </div>
+
+        <div className="flex gap-2 mb-8">
+          <div className="relative flex-1">
+            <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Enter invite code or link..."
+              className="h-12 rounded-xl pl-10 border-2 font-medium"
+              value={inviteInput}
+              onChange={e => setInviteInput(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleJoinByCode(); }}
+            />
+          </div>
+          <Button
+            onClick={handleJoinByCode}
+            disabled={!inviteInput.trim() || joinMutation.isPending}
+            className="h-12 rounded-xl px-6 font-bold"
+          >
+            {joinMutation.isPending ? "Joining..." : "Join"}
+          </Button>
         </div>
 
         {challenges?.length === 0 ? (
@@ -103,6 +155,7 @@ function Dashboard() {
                      <div className="flex items-center gap-3 text-sm text-muted-foreground font-semibold">
                        <span className="flex items-center gap-1.5 bg-secondary px-2.5 py-1 rounded-lg text-secondary-foreground"><Activity className="w-4 h-4" /> {formatActivityName(c.activityType)}</span>
                        <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {c.durationDays}d</span>
+                       {c.state !== 'active' && <span className="px-2 py-0.5 bg-secondary rounded-lg text-xs font-bold capitalize">{c.state === 'not_started' ? 'Upcoming' : 'Completed'}</span>}
                      </div>
                    </div>
                    <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
@@ -115,7 +168,7 @@ function Dashboard() {
                      <span className="uppercase tracking-wider">{c.type === 'daily' ? 'Today' : 'Total'}</span>
                      <span>{c.type === 'daily' ? c.todayLogged : c.totalLogged} / {c.type === 'daily' ? c.todayTarget : c.targetValue} {c.unit}</span>
                    </div>
-                   <Progress value={c.type === 'daily' ? (c.todayLogged / c.todayTarget) * 100 : (c.totalLogged / c.targetValue) * 100} className="h-3 rounded-full bg-secondary [&>div]:bg-primary" />
+                   <Progress value={Math.min(100, c.type === 'daily' ? (c.todayTarget > 0 ? (c.todayLogged / c.todayTarget) * 100 : 0) : (c.targetValue > 0 ? (c.totalLogged / c.targetValue) * 100 : 0))} className="h-3 rounded-full bg-secondary [&>div]:bg-primary" />
                 </div>
               </Card>
             ))}

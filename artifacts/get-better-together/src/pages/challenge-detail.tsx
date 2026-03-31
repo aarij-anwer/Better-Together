@@ -1,5 +1,5 @@
 import { useLocation, useRoute } from "wouter";
-import { useGetChallenge, useLogProgress, getGetChallengeQueryKey, getGetProgressQueryKey } from "@workspace/api-client-react";
+import { useGetChallenge, useLogProgress, getGetChallengeQueryKey, getGetProgressQueryKey, getListChallengesQueryKey, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { ProgressRing } from "@/components/ui/progress-ring";
 import { Progress } from "@/components/ui/progress";
 import { formatActivityName } from "@/lib/constants";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -20,6 +20,7 @@ export default function ChallengeDetail() {
   const queryClient = useQueryClient();
   const logMutation = useLogProgress();
   const [customVal, setCustomVal] = useState("");
+  const [selectedDayIdx, setSelectedDayIdx] = useState<number | null>(null);
   
   const { data, isLoading } = useGetChallenge(id as string, { query: { enabled: !!id, queryKey: getGetChallengeQueryKey(id as string) } });
   
@@ -47,6 +48,8 @@ export default function ChallengeDetail() {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetChallengeQueryKey(challenge.id) });
           queryClient.invalidateQueries({ queryKey: getGetProgressQueryKey(challenge.id) });
+          queryClient.invalidateQueries({ queryKey: getListChallengesQueryKey() });
+          queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
           toast.success(`Logged ${value} ${challenge.unit}`);
           setCustomVal("");
         }
@@ -62,6 +65,16 @@ export default function ChallengeDetail() {
 
   const isCompleted = challenge.state === 'completed';
   const isNotStarted = challenge.state === 'not_started';
+  const hasLogs = userProgress.totalLogged > 0;
+
+  const todayStr = (() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  })();
+
+  const todayDayIdx = userProgress.days?.findIndex(d => d.date === todayStr) ?? -1;
+  const viewIdx = selectedDayIdx ?? todayDayIdx;
+  const viewDay = userProgress.days && viewIdx >= 0 ? userProgress.days[viewIdx] : null;
 
   return (
     <Layout>
@@ -102,10 +115,21 @@ export default function ChallengeDetail() {
               <Card className="p-6 md:p-10 rounded-[2rem] border shadow-sm flex flex-col items-center">
                 {challenge.type === 'daily' ? (
                   <>
-                    <h3 className="font-bold text-lg text-muted-foreground uppercase tracking-widest mb-8">Today's Progress</h3>
-                    <ProgressRing progress={(userProgress.todayLogged / userProgress.todayTarget) * 100} size={220} strokeWidth={18} />
+                    <h3 className="font-bold text-lg text-muted-foreground uppercase tracking-widest mb-8">
+                      {viewDay && viewDay.date !== todayStr
+                        ? new Date(viewDay.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                        : "Today's Progress"}
+                    </h3>
+                    <ProgressRing
+                      progress={viewDay ? Math.min(100, (viewDay.logged / viewDay.target) * 100) : 0}
+                      size={220}
+                      strokeWidth={18}
+                    />
                     <div className="mt-8 mb-10 text-center">
-                      <div className="text-6xl font-black tracking-tight">{userProgress.todayLogged} <span className="text-3xl text-muted-foreground font-semibold">/ {userProgress.todayTarget}</span></div>
+                      <div className="text-6xl font-black tracking-tight">
+                        {viewDay?.logged ?? 0}
+                        <span className="text-3xl text-muted-foreground font-semibold"> / {viewDay?.target ?? userProgress.todayTarget}</span>
+                      </div>
                       <div className="text-xl text-muted-foreground font-bold mt-2 uppercase tracking-wider">{challenge.unit}</div>
                     </div>
                   </>
@@ -113,52 +137,76 @@ export default function ChallengeDetail() {
                   <div className="w-full text-center py-6">
                     <h3 className="font-bold text-lg text-muted-foreground uppercase tracking-widest mb-8">Total Progress</h3>
                     <div className="mb-6">
-                      <div className="text-6xl font-black tracking-tight mb-6">{userProgress.totalLogged} <span className="text-3xl text-muted-foreground font-semibold">/ {challenge.targetValue}</span></div>
-                      <Progress value={(userProgress.totalLogged / challenge.targetValue) * 100} className="h-6 rounded-full" />
+                      <div className="text-6xl font-black tracking-tight mb-6">{userProgress.totalLogged} <span className="text-3xl text-muted-foreground font-semibold">/ {userProgress.totalTarget}</span></div>
+                      <Progress value={Math.min(100, userProgress.totalTarget > 0 ? (userProgress.totalLogged / userProgress.totalTarget) * 100 : 0)} className="h-6 rounded-full" />
                     </div>
                     <div className="text-xl text-muted-foreground font-bold uppercase tracking-wider">{challenge.unit}</div>
                   </div>
                 )}
 
-                <div className="w-full border-t pt-8">
-                  <h4 className="font-black text-xl mb-6 text-center">Log Activity</h4>
-                  <div className="flex gap-3 justify-center mb-6">
-                    <Button onClick={() => handleLog(10)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+10</Button>
-                    <Button onClick={() => handleLog(20)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+20</Button>
-                    <Button onClick={() => handleLog(50)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+50</Button>
+                {!isNotStarted && !hasLogs && (
+                  <div className="w-full bg-primary/5 border-2 border-primary/10 rounded-2xl p-6 text-center mb-6">
+                    <h4 className="font-black text-lg mb-2 text-primary">Ready to start?</h4>
+                    <p className="text-muted-foreground font-medium">Log your first activity below to get going!</p>
                   </div>
-                  <div className="flex gap-3 max-w-[300px] mx-auto">
-                    <Input 
-                      type="number" 
-                      placeholder="Custom..." 
-                      className="h-14 rounded-xl text-center font-bold text-lg border-2" 
-                      value={customVal}
-                      onChange={e => setCustomVal(e.target.value)}
-                      disabled={isNotStarted}
-                    />
-                    <Button 
-                      onClick={() => handleLog(Number(customVal))} 
-                      disabled={isNotStarted || !customVal || Number(customVal) <= 0 || logMutation.isPending}
-                      className="h-14 rounded-xl px-8 font-bold text-lg shadow-sm"
-                    >
-                      Add
-                    </Button>
+                )}
+
+                {!isNotStarted && (
+                  <div className="w-full border-t pt-8">
+                    <h4 className="font-black text-xl mb-6 text-center">Log Activity</h4>
+                    <div className="flex gap-3 justify-center mb-6">
+                      <Button onClick={() => handleLog(10)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+10</Button>
+                      <Button onClick={() => handleLog(20)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+20</Button>
+                      <Button onClick={() => handleLog(50)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+50</Button>
+                    </div>
+                    <div className="flex gap-3 max-w-[300px] mx-auto">
+                      <Input 
+                        type="number" 
+                        placeholder="Custom..." 
+                        className="h-14 rounded-xl text-center font-bold text-lg border-2" 
+                        value={customVal}
+                        onChange={e => setCustomVal(e.target.value)}
+                        disabled={isNotStarted}
+                      />
+                      <Button 
+                        onClick={() => handleLog(Number(customVal))} 
+                        disabled={isNotStarted || !customVal || Number(customVal) <= 0 || logMutation.isPending}
+                        className="h-14 rounded-xl px-8 font-bold text-lg shadow-sm"
+                      >
+                        Add
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </Card>
 
               {challenge.type === 'daily' && userProgress.days && (
                 <Card className="p-6 rounded-[2rem] border shadow-sm">
-                  <h3 className="font-bold text-lg mb-6 uppercase tracking-wider text-muted-foreground">Past 7 Days</h3>
-                  <div className="flex gap-2 justify-between">
-                    {userProgress.days.slice(-7).map(day => (
-                      <div key={day.date} className="flex flex-col items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-colors ${day.completed ? 'bg-primary text-primary-foreground shadow-md' : day.logged > 0 ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'}`}>
-                          {day.completed ? <CheckCircle2 className="w-5 h-5" /> : (day.logged > 0 ? '·' : '')}
-                        </div>
-                        <span className="text-xs font-bold text-muted-foreground uppercase">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'narrow' })}</span>
-                      </div>
-                    ))}
+                  <h3 className="font-bold text-lg mb-6 uppercase tracking-wider text-muted-foreground">Day Progress</h3>
+                  <div className="flex gap-1 overflow-x-auto pb-2">
+                    {userProgress.days.map((day, idx) => {
+                      const isToday = day.date === todayStr;
+                      const isSelected = idx === viewIdx;
+                      const isPast = day.date < todayStr;
+                      return (
+                        <button
+                          key={day.date}
+                          onClick={() => setSelectedDayIdx(idx === todayDayIdx ? null : idx)}
+                          className={`flex flex-col items-center gap-2 min-w-[44px] p-2 rounded-xl transition-all cursor-pointer
+                            ${isSelected ? 'bg-primary/10 ring-2 ring-primary' : 'hover:bg-secondary'}
+                          `}
+                        >
+                          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black transition-colors
+                            ${day.completed ? 'bg-primary text-primary-foreground shadow-md' : day.logged > 0 ? 'bg-primary/20 text-primary' : isPast ? 'bg-red-100 text-red-400' : 'bg-secondary text-muted-foreground'}
+                          `}>
+                            {day.completed ? <CheckCircle2 className="w-4 h-4" /> : (day.logged > 0 ? Math.round((day.logged / day.target) * 100) + '%' : '')}
+                          </div>
+                          <span className={`text-[10px] font-bold uppercase ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
+                            {isToday ? 'Now' : new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'narrow' })}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </Card>
               )}

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, sql } from "drizzle-orm";
+import { eq, and, sql, gte, lt } from "drizzle-orm";
 import { db, challengesTable, participationsTable, progressLogsTable } from "@workspace/db";
 import { getChallengeState, computeDailyProgress } from "../lib/challengeUtils";
 
@@ -39,35 +39,58 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
   let activeChallenges = 0;
 
   const now = new Date();
-  const todayStr = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString().split("T")[0];
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const tomorrowStart = new Date(todayStart);
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   for (const challenge of challenges) {
     const state = getChallengeState(challenge.startDate, challenge.durationDays);
     if (state === "active") {
       activeChallenges++;
 
-      const logs = await db
-        .select()
-        .from(progressLogsTable)
-        .where(
-          and(
-            eq(progressLogsTable.challengeId, challenge.id),
-            eq(progressLogsTable.userId, userId)
-          )
-        );
-
       if (challenge.type === "daily") {
+        const logs = await db
+          .select()
+          .from(progressLogsTable)
+          .where(
+            and(
+              eq(progressLogsTable.challengeId, challenge.id),
+              eq(progressLogsTable.userId, userId)
+            )
+          );
         const days = computeDailyProgress(logs, challenge.startDate, challenge.durationDays, challenge.targetValue);
         const todayDay = days.find((d) => d.date === todayStr);
-        const todayVal = todayDay?.logged ?? 0;
-        totalCompletedToday += todayVal;
+        totalCompletedToday += todayDay?.logged ?? 0;
         if (todayDay?.completed) {
           completedChallengesToday++;
         }
       } else {
-        const totalLogged = logs.reduce((sum, l) => sum + l.value, 0);
-        totalCompletedToday += totalLogged;
-        if (totalLogged >= challenge.targetValue) {
+        const todayLogs = await db
+          .select()
+          .from(progressLogsTable)
+          .where(
+            and(
+              eq(progressLogsTable.challengeId, challenge.id),
+              eq(progressLogsTable.userId, userId),
+              gte(progressLogsTable.date, todayStart),
+              lt(progressLogsTable.date, tomorrowStart)
+            )
+          );
+        const todayTotal = todayLogs.reduce((sum, l) => sum + l.value, 0);
+        totalCompletedToday += todayTotal;
+
+        const allLogs = await db
+          .select()
+          .from(progressLogsTable)
+          .where(
+            and(
+              eq(progressLogsTable.challengeId, challenge.id),
+              eq(progressLogsTable.userId, userId)
+            )
+          );
+        const overallTotal = allLogs.reduce((sum, l) => sum + l.value, 0);
+        if (overallTotal >= challenge.targetValue) {
           completedChallengesToday++;
         }
       }

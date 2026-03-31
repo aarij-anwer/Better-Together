@@ -273,7 +273,7 @@ router.get("/challenges/:id", async (req, res): Promise<void> => {
       )
     );
 
-  const totalLogged = userLogs.reduce((sum, l) => sum + l.value, 0);
+  let totalLogged: number;
   let days = undefined;
   let streak = 0;
   let todayLogged = 0;
@@ -285,12 +285,14 @@ router.get("/challenges/:id", async (req, res): Promise<void> => {
   if (challenge.type === "daily") {
     const dayProgress = computeDailyProgress(userLogs, challenge.startDate, challenge.durationDays, challenge.targetValue);
     days = dayProgress;
+    totalLogged = dayProgress.reduce((sum, d) => sum + d.logged, 0);
     streak = computeStreak(dayProgress, challenge.startDate);
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const todayDay = dayProgress.find((d) => d.date === todayStr);
     todayLogged = todayDay?.logged ?? 0;
   } else {
+    totalLogged = Math.min(userLogs.reduce((sum, l) => sum + l.value, 0), totalTarget);
     todayLogged = totalLogged;
   }
 
@@ -357,15 +359,9 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
     return;
   }
 
-  const now = new Date();
-  await db.insert(progressLogsTable).values({
-    userId: req.user.id,
-    challengeId,
-    date: now,
-    value: parsed.data.value,
-  });
+  let valueToLog = parsed.data.value;
 
-  const allLogs = await db
+  const existingLogs = await db
     .select()
     .from(progressLogsTable)
     .where(
@@ -375,8 +371,28 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
       )
     );
 
-  const totalLogged = allLogs.reduce((sum, l) => sum + l.value, 0);
+  if (challenge.type === "daily") {
+    const maxTotal = challenge.targetValue * challenge.durationDays;
+    const currentTotal = existingLogs.reduce((sum, l) => sum + l.value, 0);
+    const remaining = maxTotal - currentTotal;
+    if (remaining <= 0) {
+      res.status(400).json({ error: "Challenge fully completed, no more progress can be logged" });
+      return;
+    }
+    valueToLog = Math.min(valueToLog, remaining);
+  }
 
+  const now = new Date();
+  await db.insert(progressLogsTable).values({
+    userId: req.user.id,
+    challengeId,
+    date: now,
+    value: valueToLog,
+  });
+
+  const allLogs = [...existingLogs, { date: now, value: valueToLog, userId: req.user.id, challengeId, id: "", createdAt: now }];
+
+  let totalLogged: number;
   let todayLogged = 0;
   let todayTarget = challenge.targetValue;
   let days = undefined;
@@ -384,10 +400,13 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
   if (challenge.type === "daily") {
     const dayProgress = computeDailyProgress(allLogs, challenge.startDate, challenge.durationDays, challenge.targetValue);
     days = dayProgress;
+    totalLogged = dayProgress.reduce((sum, d) => sum + d.logged, 0);
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const todayDay = dayProgress.find((d) => d.date === todayStr);
     todayLogged = todayDay?.logged ?? 0;
   } else {
+    const totalTarget = challenge.targetValue;
+    totalLogged = Math.min(allLogs.reduce((sum, l) => sum + l.value, 0), totalTarget);
     todayLogged = totalLogged;
   }
 
@@ -433,11 +452,11 @@ router.get("/challenges/:id/progress", async (req, res): Promise<void> => {
       )
     );
 
-  const totalLogged = logs.reduce((sum, l) => sum + l.value, 0);
   const totalTarget = challenge.type === "daily"
     ? challenge.targetValue * challenge.durationDays
     : challenge.targetValue;
 
+  let totalLogged: number;
   let todayLogged = 0;
   let streak = 0;
   let days = undefined;
@@ -445,12 +464,14 @@ router.get("/challenges/:id/progress", async (req, res): Promise<void> => {
   if (challenge.type === "daily") {
     const dayProgress = computeDailyProgress(logs, challenge.startDate, challenge.durationDays, challenge.targetValue);
     days = dayProgress;
+    totalLogged = dayProgress.reduce((sum, d) => sum + d.logged, 0);
     streak = computeStreak(dayProgress, challenge.startDate);
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const todayDay = dayProgress.find((d) => d.date === todayStr);
     todayLogged = todayDay?.logged ?? 0;
   } else {
+    totalLogged = Math.min(logs.reduce((sum, l) => sum + l.value, 0), totalTarget);
     todayLogged = totalLogged;
   }
 
@@ -518,18 +539,22 @@ async function buildLeaderboard(challenge: typeof challengesTable.$inferSelect) 
           )
         );
 
-      const totalLogged = logs.reduce((sum, l) => sum + l.value, 0);
       const totalTarget = challenge.type === "daily"
         ? challenge.targetValue * challenge.durationDays
         : challenge.targetValue;
 
-      const percentComplete = totalTarget > 0 ? Math.round((totalLogged / totalTarget) * 10000) / 100 : 0;
-
+      let totalLogged: number;
       let streak = 0;
+
       if (challenge.type === "daily" && state !== "not_started") {
         const dayProgress = computeDailyProgress(logs, challenge.startDate, challenge.durationDays, challenge.targetValue);
+        totalLogged = dayProgress.reduce((sum, d) => sum + d.logged, 0);
         streak = computeStreak(dayProgress, challenge.startDate);
+      } else {
+        totalLogged = Math.min(logs.reduce((sum, l) => sum + l.value, 0), totalTarget);
       }
+
+      const percentComplete = totalTarget > 0 ? Math.round((totalLogged / totalTarget) * 10000) / 100 : 0;
 
       const userName = [p.firstName, p.lastName].filter(Boolean).join(" ") || "User";
 
