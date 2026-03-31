@@ -1,0 +1,150 @@
+#1 - Build Get Better Together App
+
+What & Why
+Build a social fitness challenge app where users create private, time-bound challenges (pushups, steps, etc.) and invite others to complete them together. Features progress tracking with smart backlog filling, streaks, and leaderboards.
+
+Done looks like
+Unauthenticated users see a minimal welcome screen with the app name, a brief tagline, and a "Sign in with Replit" button
+
+Visiting an invite link (/join/:inviteCode) while logged out shows the challenge preview (title, activity, duration, participant count) with a prompt to sign in — after signing in, the user is redirected back to join that challenge
+
+All app functionality (dashboard, challenges, logging, leaderboard) is behind authentication
+
+Users can sign in with Replit Auth
+
+Dashboard shows a lightweight "Today" summary strip (e.g. "Today: 30 pushups, 5,000 steps" or "2 of 3 challenges completed") above a list of active challenge cards
+
+🔧 NEW / FIX: If a user has only one active challenge, they are taken directly to that challenge detail screen instead of the dashboard
+
+Users can create a challenge with title, activity type, type (daily/total), target value, duration, and optional future start date (defaults to today)
+
+🔧 NEW / FIX: Unit is NOT user-defined — it is derived from activity type (e.g. pushups → reps, running → km)
+
+Challenges with future start dates appear as "not started" with logging disabled until the start date
+
+🔧 NEW / FIX: If a challenge has not started yet:
+- Logging is disabled
+- Leaderboard shows participants only (no rankings yet)
+- Streak is zero for all participants
+
+An invite code is auto-generated; users can join challenges via /join/:inviteCode or by entering a code from the dashboard
+
+Users can log progress with quick-add buttons (+10, +20, +50) or custom input — logging fills today first, then overflows to oldest incomplete days (no overfilling)
+
+🔧 NEW / FIX: Logging behavior is deterministic:
+- Always fills today's remaining target first
+- Remaining amount flows to oldest incomplete days
+- A day cannot exceed its target (no overfilling)
+
+Challenge detail screen shows: today's progress with progress ring, horizontal day selector, quick-add buttons, and a compact leaderboard preview
+
+🔧 NEW / FIX: If no progress has been logged yet, show an empty state prompting the user to log their first activity (e.g. “Start your first set 💪”)
+
+Full leaderboard shows participants ranked by total completed with % completion as tiebreaker
+
+Streaks are calculated as consecutive completed days (recoverable when backlog is filled), shown with streak indicator on challenge detail
+
+Empty states guide new users toward creating or joining their first challenge
+
+Design direction
+Clean, minimal, and modern — inspired by Notion (structure) and Apple Fitness (progress visuals)
+
+Strong spacing and typography with clear visual hierarchy
+
+Today's progress is visually dominant on the challenge detail screen
+
+Subtle motion: progress ring animation on log, smooth transitions
+
+Limited color palette with one primary accent color
+
+Calm and motivating tone — social and competitive without being aggressive
+
+No gamification clutter (no excessive badges, loud animations, or competing elements)
+
+Core loop: Open app > log progress > see progress > stay motivated
+
+Out of scope
+Apple Health integration
+Teams (just individual participants)
+Public challenge discovery
+Comments/chat
+Push notifications (just UI stubs)
+Editing start date after creation
+Charts, graphs, or historical analytics on the dashboard
+
+Tasks
+
+Database schema — Create Drizzle tables for users, challenges, participations, and progress_logs matching the data model spec. Use Replit Auth user info (claims from OpenID).
+
+🔧 NEW / FIX: Progress logs are stored as raw entries (not pre-allocated per day)
+- Per-day progress is computed dynamically based on logs
+- Apply “fill today first, then backlog” logic during read
+
+OpenAPI spec — Define all API endpoints: auth session, challenge CRUD, join by invite code (including a public preview endpoint for unauthenticated users), progress logging (with per-day breakdown response), leaderboard, and streak calculation.
+
+🔧 NEW / FIX: Include a dashboard summary endpoint returning:
+- totalCompletedToday
+- completedChallengesToday
+- totalChallenges
+
+🔧 NEW / FIX: Include challenge state handling:
+- active
+- not_started (based on start date)
+
+🔧 NEW / FIX: Prevent logging before challenge start date at API level
+
+Run codegen — Generate React Query hooks and Zod schemas from the OpenAPI spec.
+
+Launch frontend build — Delegate to design subagent with the creative brief, API hooks, and data types.
+
+Pages:
+- welcome/landing (unauthenticated)
+- home/dashboard (today summary strip + challenge cards)
+- challenge detail (progress ring + day selector + quick-add + leaderboard preview)
+- create challenge (with optional future start date)
+- join challenge (via URL or code entry — with unauthenticated preview showing challenge info + sign-in prompt)
+- full leaderboard
+
+Backend routes — Implement all API route handlers with the core logging logic:
+
+🔧 NEW / FIX: Logging engine:
+- Accept raw log value
+- Compute distribution across days (today first, then backlog)
+- Enforce no overfilling
+
+🔧 NEW / FIX: Leaderboard:
+- Rank by total completed
+- Use % completion as tiebreaker
+
+🔧 NEW / FIX: Streak computation:
+- Based on consecutive fully completed days
+- Recalculates when backlog is filled
+
+🔧 NEW / FIX: Guard rails:
+- Block logging before start date
+- Handle not_started challenges correctly
+- Ensure deterministic allocation of logs
+
+🔧 NEW / FIX: Dashboard summary:
+- Aggregate today's progress across all active challenges
+- Count completed vs total challenges
+
+🔧 NEW / FIX: Public challenge preview endpoint:
+- Returns title, activity, duration, participant count
+- Accessible without authentication
+
+Database provisioning and schema push — Provision the PostgreSQL database and push the Drizzle schema.
+
+Replit Auth integration — Set up authentication middleware and session management using Replit Auth (OpenID Connect with PKCE). Support post-login redirect back to invite links.
+
+Relevant files
+lib/api-spec/openapi.yaml
+lib/api-spec/orval.config.ts
+lib/db/src/schema/index.ts
+lib/db/drizzle.config.ts
+artifacts/api-server/src/app.ts
+artifacts/api-server/src/routes/index.ts
+artifacts/api-server/src/routes/health.ts
+artifacts/api-server/src/index.ts
+artifacts/api-server/package.json
+lib/db/package.json

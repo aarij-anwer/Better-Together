@@ -1,0 +1,328 @@
+# 🧾 Product Spec — Get Better Together
+
+## 🧠 Overview
+
+**Get Better Together** is a social fitness challenge app where users create private, time-bound challenges (e.g. pushups, steps) and invite others to complete them together with progress tracking, streaks, and leaderboards.
+
+---
+
+# 🎯 MVP Scope
+
+## Core Features
+
+1. User authentication (simple)
+2. Create challenge (daily + total)
+3. Join challenge via link
+4. Log progress (manual, quick-add)
+5. Daily progress system with banking + backlog
+6. Leaderboard (total + %)
+7. Streak tracking (recoverable)
+8. Basic notifications (optional stub)
+
+---
+
+# 🗂️ Data Models (Prisma Schema)
+
+```prisma
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  participations Participation[]
+  logs           ProgressLog[]
+}
+
+model Challenge {
+  id            String   @id @default(uuid())
+  title         String
+  activityType  String   // "pushups", "steps", etc.
+  unit          String   // "reps", "steps", "km"
+  type          String   // "daily" | "total"
+  targetValue   Int      // e.g. 50/day OR 2000 total
+  durationDays  Int
+  startDate     DateTime
+  createdById   String
+  inviteCode    String   @unique
+  createdAt     DateTime @default(now())
+
+  participants  Participation[]
+  logs          ProgressLog[]
+}
+
+model Participation {
+  id          String   @id @default(uuid())
+  userId      String
+  challengeId String
+  joinedAt    DateTime @default(now())
+
+  user        User      @relation(fields: [userId], references: [id])
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+
+  @@unique([userId, challengeId])
+}
+
+model ProgressLog {
+  id          String   @id @default(uuid())
+  userId      String
+  challengeId String
+  date        DateTime
+  value       Int
+
+  user        User      @relation(fields: [userId], references: [id])
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+
+  createdAt   DateTime @default(now())
+}
+```
+
+---
+
+# 🔁 Core Logic (CRITICAL)
+
+## 1. Daily Structure
+
+For **daily challenges**:
+- Each day has a target (e.g. 50)
+- Total expected = `durationDays * targetValue`
+
+---
+
+## 2. Logging Logic (VERY IMPORTANT)
+
+### When user logs `X`:
+
+#### Step 1 — Apply to today
+- Fill today up to target
+- If today already complete, skip today
+
+#### Step 2 — Overflow goes to backlog
+- Fill oldest incomplete day first
+- Continue until:
+  - no remaining value, or
+  - all days complete
+
+---
+
+## Example
+
+```text
+Day 1: 0/50
+Day 2: 0/50
+Day 3 (today): 20/50
+
+User logs: +100
+```
+
+Result:
+
+```text
+Day 3 → 50/50 (used 30)
+Remaining: 70
+
+Day 1 → 50/50 (used 50)
+Remaining: 20
+
+Day 2 → 20/50
+```
+
+---
+
+## 3. No Overfilling
+
+- A day cannot exceed its target
+- Extra always flows backward into backlog
+
+---
+
+## 4. Total Challenges
+
+- No daily caps
+- Simply accumulate total progress
+
+---
+
+# 📊 Leaderboard Logic
+
+## Total Completed
+
+```text
+SUM(all logs applied)
+```
+
+## Expected Progress
+
+```text
+daily:
+  daysPassed * targetValue
+
+total:
+  (currentDate - startDate) / durationDays * targetValue
+```
+
+## % Completion
+
+```text
+totalCompleted / expectedProgress
+```
+
+## Sorting
+
+- Primary: total completed (descending)
+- Secondary (tie-breaker): % completion
+
+---
+
+# 🔥 Streak Logic
+
+## Definition
+
+- A day is “complete” if:
+  - daily challenge → target reached
+
+## Streak
+
+- Number of consecutive completed days
+
+## Recoverable
+
+- If user later fills a missed day:
+  - streak is recalculated
+  - becomes continuous again
+
+---
+
+# 🖥️ Core Screens
+
+## 1. Home / Challenge Screen (Default)
+
+### Show:
+
+- Challenge title
+- Today’s progress:
+  - `30 / 50 pushups`
+- Progress ring
+- Day selector (horizontal)
+- Quick-add buttons:
+  - `+10`, `+20`, `+50`
+- Custom input
+- Leaderboard preview
+
+---
+
+## 2. Leaderboard Screen
+
+Show list:
+
+```text
+1. Ahmed — 1200 (95%)
+2. You — 1100 (100%)
+```
+
+---
+
+## 3. Create Challenge Screen
+
+Fields:
+
+- Title
+- Activity type (dropdown)
+- Type (`daily` / `total`)
+- Target value
+- Duration (days)
+
+Auto-generate:
+- inviteCode
+
+---
+
+## 4. Join Challenge
+
+- URL: `/join/[inviteCode]`
+- Join button creates Participation
+
+---
+
+# 🔗 API Endpoints
+
+## Auth
+
+```text
+POST /api/auth/login
+```
+
+## Challenges
+
+```text
+POST /api/challenges
+GET  /api/challenges/:id
+GET  /api/challenges/join/:code
+POST /api/challenges/:id/join
+```
+
+## Logging
+
+```text
+POST /api/challenges/:id/log
+```
+
+Body:
+
+```json
+{
+  "value": 10
+}
+```
+
+## Leaderboard
+
+```text
+GET /api/challenges/:id/leaderboard
+```
+
+---
+
+# ⚡ Logging UX Rules
+
+- Tap buttons:
+  - +10 / +20 / +50
+- Updates instantly
+- Optimistic UI
+
+---
+
+# 🔔 Notifications (MVP-lite)
+
+- Daily reminder
+- “You’re behind today”
+
+---
+
+# 🚀 MVP Constraints
+
+- Private challenges only
+- No Apple Health integration
+- No teams (just participants)
+- No public discovery
+- No comments/chat
+
+---
+
+# 🧠 Key Product Rules
+
+1. Logging must be under 2 seconds
+2. Today is always the focus
+3. Backlog system must feel automatic
+4. No overfilling
+5. Leaderboard must be simple
+
+---
+
+# 🏁 Success Criteria (MVP)
+
+- User can:
+  - create challenge in under 30 seconds
+  - invite friends
+  - log progress in under 2 seconds
+  - see leaderboard update instantly

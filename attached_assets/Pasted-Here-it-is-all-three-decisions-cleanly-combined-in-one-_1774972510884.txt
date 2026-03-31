@@ -1,0 +1,166 @@
+Here it is—all three decisions cleanly combined in one place 👇
+
+---
+
+## Product Decisions & UX Guidelines
+
+### 1. Dashboard Summary (Home Page Behavior)
+
+The home page should include a **lightweight summary of the user’s progress for today**, while remaining minimal and action-oriented.
+
+#### Recommendation
+
+Include a small **“Today” summary strip at the top of the dashboard**.
+
+#### Example
+
+* “Today: 30 pushups • 5,000 steps”
+  or
+* “Today’s Progress: 2 of 3 challenges completed”
+
+---
+
+#### Key Principles
+
+* This is **not a full analytics view**
+* Do **not** include charts, graphs, or historical breakdowns
+* Keep it **simple, glanceable, and action-oriented**
+* The goal is to:
+
+  * Reinforce daily progress
+  * Remind users to complete remaining challenges
+  * Direct attention back to active challenges
+
+---
+
+#### Why This Matters
+
+* Helps establish a **daily habit loop**
+* Gives users a quick sense of progress across multiple challenges
+* Prevents the dashboard from feeling like a passive list
+* Adds subtle urgency without overwhelming the user
+
+---
+
+#### Important Constraint
+
+Keep this section **visually lightweight and secondary** to the challenge list. The primary goal of the home page is still:
+
+> Quickly getting users back into their active challenges to log progress
+
+---
+
+---
+
+### 2. Challenge Start Date
+
+For the MVP, challenges should **default to starting immediately (today)**, while still allowing users to optionally select a future start date.
+
+#### Recommendation
+
+* Default the start date to **today**
+* Allow users to optionally choose a **future start date**
+* Keep the input simple (e.g. date picker)
+
+---
+
+#### Key Principles
+
+* Preserve speed and low friction in the creation flow
+* Support simple scheduling use cases (e.g. “starting Monday”)
+* Avoid overcomplicating the experience
+
+---
+
+#### Why This Matters
+
+* Maintains fast creation for most users (no extra input required)
+* Supports real-world scenarios:
+
+  * Friends planning ahead
+  * Group challenges starting at the same time
+* Keeps flexibility without sacrificing simplicity
+
+---
+
+#### UX Behavior
+
+* If no date is selected → challenge starts **immediately (today)**
+* If a future date is selected:
+
+  * Challenge is created in a **“not started” state**
+  * Users can still join via invite link
+  * Logging is **disabled until the start date**
+
+---
+
+#### Important Constraints
+
+* Do not introduce complex scheduling logic
+* Do not allow editing the start date after creation (for MVP)
+* Keep UI simple and unobtrusive (date picker should not dominate the form)
+
+---
+
+---
+
+### 3. Overall App Feel & Design Direction
+
+The app should feel **clean and minimal, with subtle energy**, rather than loud or overly gamified.
+
+#### Recommendation
+
+Adopt a **clean, modern design with focused visual hierarchy**, using energy sparingly to reinforce progress and action.
+
+---
+
+#### Design Direction
+
+* Clean layout with strong spacing and typography
+* Minimal clutter — only essential elements on screen
+* Clear visual hierarchy (today’s progress is dominant)
+* Subtle motion and feedback (e.g. progress ring animation on log)
+* Limited color palette with one primary accent color
+
+---
+
+#### Tone
+
+* Calm and focused, not chaotic
+* Motivating without being overwhelming
+* Social and competitive, but not aggressive
+
+---
+
+#### Inspirations
+
+* Notion (clean structure)
+* Apple Fitness (focused progress visuals)
+* Minimal fitness trackers (clarity over noise)
+
+---
+
+#### Why This Matters
+
+* Keeps the experience approachable and easy to use daily
+* Reduces cognitive load during the core loop (logging progress)
+* Makes the product feel more “premium” and intentional
+* Supports long-term retention by avoiding fatigue
+
+---
+
+#### Important Constraint
+
+Avoid:
+
+* Overly gamified UI (badges everywhere, excessive animations)
+* Loud or cluttered layouts
+* Too many competing elements on one screen
+
+The design should always reinforce the core loop:
+
+> Open app → log progress → see progress → stay motivated
+
+---
+
+If you want next, we can plug this directly into your full spec or move into UI wireframes or code scaffolding.
