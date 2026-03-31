@@ -29,7 +29,7 @@ export default function ChallengeJoin() {
     joinMutation.mutate({ inviteCode: inviteCode as string }, {
       onSuccess: (res) => {
         toast.success("Joined challenge successfully!");
-        setLocation(`/challenge/${res.challengeId}`);
+        setLocation(`/challenge/${res.slug}`);
       },
       onError: () => {
         toast.error("Failed to join challenge. You might already be a participant.");

@@ -10,6 +10,7 @@ import type { ChallengeType } from "./challengeType";
 
 export interface Challenge {
   id: string;
+  slug: string;
   title: string;
   activityType: string;
   unit: string;

@@ -56,7 +56,7 @@ export default function ChallengeNew() {
     }, {
       onSuccess: (challenge) => {
         toast.success("Challenge created!");
-        setLocation(`/challenge/${challenge.id}`);
+        setLocation(`/challenge/${challenge.slug}`);
       }
     });
   };

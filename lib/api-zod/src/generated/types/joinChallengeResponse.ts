@@ -8,5 +8,6 @@
 
 export interface JoinChallengeResponse {
   challengeId: string;
+  slug: string;
   message: string;
 }

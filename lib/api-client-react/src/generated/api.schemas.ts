@@ -115,6 +115,7 @@ export const ChallengeState = {
 
 export interface Challenge {
   id: string;
+  slug: string;
   title: string;
   activityType: string;
   unit: string;
@@ -148,6 +149,7 @@ export const ChallengeWithProgressState = {
 
 export interface ChallengeWithProgress {
   id: string;
+  slug: string;
   title: string;
   activityType: string;
   unit: string;
@@ -230,6 +232,7 @@ export interface ChallengePreview {
 
 export interface JoinChallengeResponse {
   challengeId: string;
+  slug: string;
   message: string;
 }
 

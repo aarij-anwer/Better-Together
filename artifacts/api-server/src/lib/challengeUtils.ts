@@ -19,6 +19,20 @@ export function getUnitForActivity(activityType: string): string {
   return ACTIVITY_UNITS[activityType] || "units";
 }
 
+export function generateSlug(title: string): string {
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "")
+    .substring(0, 60);
+  if (!slug) {
+    return `challenge-${crypto.randomUUID().substring(0, 8)}`;
+  }
+  return slug;
+}
+
 export function generateInviteCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "";

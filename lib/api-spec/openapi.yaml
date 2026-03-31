@@ -562,9 +562,11 @@ components:
 
     Challenge:
       type: object
-      required: [id, title, activityType, unit, type, targetValue, durationDays, startDate, createdById, inviteCode, createdAt, state]
+      required: [id, slug, title, activityType, unit, type, targetValue, durationDays, startDate, createdById, inviteCode, createdAt, state]
       properties:
         id:
+          type: string
+        slug:
           type: string
         title:
           type: string
@@ -597,9 +599,11 @@ components:
 
     ChallengeWithProgress:
       type: object
-      required: [id, title, activityType, unit, type, targetValue, durationDays, startDate, createdById, inviteCode, createdAt, state, totalLogged, todayLogged, todayTarget, participantCount]
+      required: [id, slug, title, activityType, unit, type, targetValue, durationDays, startDate, createdById, inviteCode, createdAt, state, totalLogged, todayLogged, todayTarget, participantCount]
       properties:
         id:
+          type: string
+        slug:
           type: string
         title:
           type: string
@@ -679,9 +683,11 @@ components:
 
     JoinChallengeResponse:
       type: object
-      required: [challengeId, message]
+      required: [challengeId, slug, message]
       properties:
         challengeId:
+          type: string
+        slug:
           type: string
         message:
           type: string

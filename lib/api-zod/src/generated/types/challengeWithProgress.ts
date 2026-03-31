@@ -10,6 +10,7 @@ import type { ChallengeWithProgressType } from "./challengeWithProgressType";
 
 export interface ChallengeWithProgress {
   id: string;
+  slug: string;
   title: string;
   activityType: string;
   unit: string;

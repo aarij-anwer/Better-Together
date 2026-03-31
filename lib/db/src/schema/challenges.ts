@@ -5,6 +5,7 @@ import { usersTable } from "./auth";
 
 export const challengesTable = pgTable("challenges", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  slug: text("slug").notNull().unique(),
   title: text("title").notNull(),
   activityType: text("activity_type").notNull(),
   unit: text("unit").notNull(),

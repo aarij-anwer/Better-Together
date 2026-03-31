@@ -48,7 +48,7 @@ function Dashboard() {
     if (challenges) {
       const active = challenges.filter(c => c.state === 'active');
       if (active.length === 1) {
-        setLocation(`/challenge/${active[0].id}`);
+        setLocation(`/challenge/${active[0].slug}`);
       }
     }
   }, [challenges, setLocation]);
@@ -63,7 +63,7 @@ function Dashboard() {
         queryClient.invalidateQueries({ queryKey: getListChallengesQueryKey() });
         queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
         setInviteInput("");
-        setLocation(`/challenge/${res.challengeId}`);
+        setLocation(`/challenge/${res.slug}`);
       },
       onError: () => {
         toast.error("Could not join. Check the code and try again.");
@@ -148,7 +148,7 @@ function Dashboard() {
         ) : (
           <div className="grid gap-4">
             {challenges?.map(c => (
-              <Card key={c.id} className="p-5 md:p-6 rounded-[1.5rem] hover:shadow-md hover:border-primary/50 transition-all cursor-pointer border group" onClick={() => setLocation(`/challenge/${c.id}`)}>
+              <Card key={c.id} className="p-5 md:p-6 rounded-[1.5rem] hover:shadow-md hover:border-primary/50 transition-all cursor-pointer border group" onClick={() => setLocation(`/challenge/${c.slug}`)}>
                 <div className="flex justify-between items-start mb-6">
                    <div>
                      <h3 className="font-black text-2xl tracking-tight mb-2 group-hover:text-primary transition-colors">{c.title}</h3>

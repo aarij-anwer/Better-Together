@@ -43,11 +43,11 @@ export default function ChallengeDetail() {
   const handleLog = (value: number) => {
     if (challenge.state === 'not_started') return;
     logMutation.mutate(
-      { id: challenge.id, data: { value } },
+      { id: challenge.slug || challenge.id, data: { value } },
       {
         onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: getGetChallengeQueryKey(challenge.id) });
-          queryClient.invalidateQueries({ queryKey: getGetProgressQueryKey(challenge.id) });
+          queryClient.invalidateQueries({ queryKey: getGetChallengeQueryKey(challenge.slug || challenge.id) });
+          queryClient.invalidateQueries({ queryKey: getGetProgressQueryKey(challenge.slug || challenge.id) });
           queryClient.invalidateQueries({ queryKey: getListChallengesQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
           toast.success(`Logged ${value} ${challenge.unit}`);
@@ -75,6 +75,13 @@ export default function ChallengeDetail() {
   const todayDayIdx = userProgress.days?.findIndex(d => d.date === todayStr) ?? -1;
   const viewIdx = selectedDayIdx ?? todayDayIdx;
   const viewDay = userProgress.days && viewIdx >= 0 ? userProgress.days[viewIdx] : null;
+
+  const formatDayDate = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${month}/${day}`;
+  };
 
   return (
     <Layout>
@@ -154,12 +161,11 @@ export default function ChallengeDetail() {
                 {!isNotStarted && (
                   <div className="w-full border-t pt-8">
                     <h4 className="font-black text-xl mb-6 text-center">Log Activity</h4>
-                    <div className="flex gap-3 justify-center mb-6">
+                    <div className="flex gap-3 justify-center mb-6 max-w-[340px] mx-auto">
                       <Button onClick={() => handleLog(10)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+10</Button>
                       <Button onClick={() => handleLog(20)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+20</Button>
-                      <Button onClick={() => handleLog(50)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+50</Button>
                     </div>
-                    <div className="flex gap-3 max-w-[300px] mx-auto">
+                    <div className="flex gap-3 max-w-[340px] mx-auto">
                       <Input 
                         type="number" 
                         placeholder="Custom..." 
@@ -183,30 +189,35 @@ export default function ChallengeDetail() {
               {challenge.type === 'daily' && userProgress.days && (
                 <Card className="p-6 rounded-[2rem] border shadow-sm">
                   <h3 className="font-bold text-lg mb-6 uppercase tracking-wider text-muted-foreground">Day Progress</h3>
-                  <div className="flex gap-1 overflow-x-auto pb-2">
-                    {userProgress.days.map((day, idx) => {
-                      const isToday = day.date === todayStr;
-                      const isSelected = idx === viewIdx;
-                      const isPast = day.date < todayStr;
-                      return (
-                        <button
-                          key={day.date}
-                          onClick={() => setSelectedDayIdx(idx === todayDayIdx ? null : idx)}
-                          className={`flex flex-col items-center gap-2 min-w-[44px] p-2 rounded-xl transition-all cursor-pointer
-                            ${isSelected ? 'bg-primary/10 ring-2 ring-primary' : 'hover:bg-secondary'}
-                          `}
-                        >
-                          <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black transition-colors
-                            ${day.completed ? 'bg-primary text-primary-foreground shadow-md' : day.logged > 0 ? 'bg-primary/20 text-primary' : isPast ? 'bg-red-100 text-red-400' : 'bg-secondary text-muted-foreground'}
-                          `}>
-                            {day.completed ? <CheckCircle2 className="w-4 h-4" /> : (day.logged > 0 ? Math.round((day.logged / day.target) * 100) + '%' : '')}
-                          </div>
-                          <span className={`text-[10px] font-bold uppercase ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
-                            {isToday ? 'Now' : new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'narrow' })}
-                          </span>
-                        </button>
-                      );
-                    })}
+                  <div className="overflow-x-auto -mx-2 px-2 pb-2">
+                    <div className="flex gap-1" style={{ width: 'max-content' }}>
+                      {userProgress.days.map((day, idx) => {
+                        const isToday = day.date === todayStr;
+                        const isSelected = idx === viewIdx;
+                        const isPast = day.date < todayStr;
+                        return (
+                          <button
+                            key={day.date}
+                            onClick={() => setSelectedDayIdx(idx === todayDayIdx ? null : idx)}
+                            className={`flex flex-col items-center gap-1.5 w-[52px] p-2 rounded-xl transition-all cursor-pointer shrink-0
+                              ${isSelected ? 'bg-primary/10 ring-2 ring-primary' : 'hover:bg-secondary'}
+                            `}
+                          >
+                            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black transition-colors
+                              ${day.completed ? 'bg-primary text-primary-foreground shadow-md' : day.logged > 0 ? 'bg-primary/20 text-primary' : isPast ? 'bg-red-100 text-red-400' : 'bg-secondary text-muted-foreground'}
+                            `}>
+                              {day.completed ? <CheckCircle2 className="w-4 h-4" /> : (day.logged > 0 ? Math.round((day.logged / day.target) * 100) + '%' : '')}
+                            </div>
+                            <span className={`text-[10px] font-bold uppercase leading-tight ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
+                              {isToday ? 'Now' : new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'narrow' })}
+                            </span>
+                            <span className={`text-[9px] font-semibold leading-none ${isToday ? 'text-primary' : 'text-muted-foreground/70'}`}>
+                              {formatDayDate(day.date)}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
                 </Card>
               )}
@@ -216,14 +227,14 @@ export default function ChallengeDetail() {
               <Card className="p-6 rounded-[2rem] border shadow-sm bg-card/50">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="font-black text-xl flex items-center gap-2"><Trophy className="w-6 h-6 text-primary" /> Leaderboard</h3>
-                  <Button variant="ghost" size="sm" onClick={() => setLocation(`/challenge/${id}/leaderboard`)} className="text-primary hover:text-primary/80 font-bold px-2 rounded-lg">
+                  <Button variant="ghost" size="sm" onClick={() => setLocation(`/challenge/${challenge.slug || id}/leaderboard`)} className="text-primary hover:text-primary/80 font-bold px-2 rounded-lg">
                     See All <ArrowRight className="w-4 h-4 ml-1" />
                   </Button>
                 </div>
                 
                 <div className="space-y-5">
                   {leaderboard.slice(0, 5).map((entry, idx) => (
-                    <div key={entry.userId} className="flex items-center gap-3 group cursor-pointer" onClick={() => setLocation(`/challenge/${id}/leaderboard`)}>
+                    <div key={entry.userId} className="flex items-center gap-3 group cursor-pointer" onClick={() => setLocation(`/challenge/${challenge.slug || id}/leaderboard`)}>
                       <div className={`w-6 text-center font-black text-lg ${idx === 0 ? 'text-yellow-500' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-amber-700' : 'text-muted-foreground'}`}>
                         {entry.rank}
                       </div>

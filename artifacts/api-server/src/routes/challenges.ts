@@ -7,6 +7,7 @@ import {
 } from "@workspace/api-zod";
 import {
   getUnitForActivity,
+  generateSlug,
   generateInviteCode,
   getChallengeState,
   computeDailyProgress,
@@ -19,6 +20,20 @@ const router: IRouter = Router();
 function getParam(params: Record<string, string | string[]>, key: string): string {
   const val = params[key];
   return Array.isArray(val) ? val[0] : val;
+}
+
+async function findChallengeBySlugOrId(slugOrId: string) {
+  let [challenge] = await db
+    .select()
+    .from(challengesTable)
+    .where(eq(challengesTable.slug, slugOrId));
+  if (!challenge) {
+    [challenge] = await db
+      .select()
+      .from(challengesTable)
+      .where(eq(challengesTable.id, slugOrId));
+  }
+  return challenge ?? null;
 }
 
 async function requireParticipant(userId: string, challengeId: string) {
@@ -134,6 +149,18 @@ router.post("/challenges", async (req, res): Promise<void> => {
     retries++;
   }
 
+  let slug = generateSlug(title);
+  let slugRetries = 0;
+  while (slugRetries < 10) {
+    const [existing] = await db
+      .select({ id: challengesTable.id })
+      .from(challengesTable)
+      .where(eq(challengesTable.slug, slug));
+    if (!existing) break;
+    slug = `${generateSlug(title)}-${Math.floor(Math.random() * 9999)}`;
+    slugRetries++;
+  }
+
   const resolvedStartDate = startDate ? new Date(startDate) : new Date();
   const startOfDay = new Date(resolvedStartDate.getFullYear(), resolvedStartDate.getMonth(), resolvedStartDate.getDate());
 
@@ -141,6 +168,7 @@ router.post("/challenges", async (req, res): Promise<void> => {
     .insert(challengesTable)
     .values({
       title,
+      slug,
       activityType,
       unit,
       type,
@@ -230,7 +258,7 @@ router.post("/challenges/join/:inviteCode", async (req, res): Promise<void> => {
     challengeId: challenge.id,
   });
 
-  res.json({ challengeId: challenge.id, message: "Joined successfully" });
+  res.json({ challengeId: challenge.id, slug: challenge.slug, message: "Joined successfully" });
 });
 
 router.get("/challenges/:id", async (req, res): Promise<void> => {
@@ -239,21 +267,17 @@ router.get("/challenges/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const challengeId = getParam(req.params, "id");
+  const slugOrId = getParam(req.params, "id");
 
-  const participation = await requireParticipant(req.user.id, challengeId);
-  if (!participation) {
-    res.status(403).json({ error: "Not a participant" });
+  const challenge = await findChallengeBySlugOrId(slugOrId);
+  if (!challenge) {
+    res.status(404).json({ error: "Challenge not found" });
     return;
   }
 
-  const [challenge] = await db
-    .select()
-    .from(challengesTable)
-    .where(eq(challengesTable.id, challengeId));
-
-  if (!challenge) {
-    res.status(404).json({ error: "Challenge not found" });
+  const participation = await requireParticipant(req.user.id, challenge.id);
+  if (!participation) {
+    res.status(403).json({ error: "Not a participant" });
     return;
   }
 
@@ -326,17 +350,15 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
     return;
   }
 
-  const challengeId = getParam(req.params, "id");
+  const slugOrId = getParam(req.params, "id");
 
-  const [challenge] = await db
-    .select()
-    .from(challengesTable)
-    .where(eq(challengesTable.id, challengeId));
-
+  const challenge = await findChallengeBySlugOrId(slugOrId);
   if (!challenge) {
     res.status(404).json({ error: "Challenge not found" });
     return;
   }
+
+  const challengeId = challenge.id;
 
   const participation = await requireParticipant(req.user.id, challengeId);
   if (!participation) {
@@ -425,21 +447,17 @@ router.get("/challenges/:id/progress", async (req, res): Promise<void> => {
     return;
   }
 
-  const challengeId = getParam(req.params, "id");
+  const slugOrId = getParam(req.params, "id");
 
-  const participation = await requireParticipant(req.user.id, challengeId);
-  if (!participation) {
-    res.status(403).json({ error: "Not a participant" });
+  const challenge = await findChallengeBySlugOrId(slugOrId);
+  if (!challenge) {
+    res.status(404).json({ error: "Challenge not found" });
     return;
   }
 
-  const [challenge] = await db
-    .select()
-    .from(challengesTable)
-    .where(eq(challengesTable.id, challengeId));
-
-  if (!challenge) {
-    res.status(404).json({ error: "Challenge not found" });
+  const participation = await requireParticipant(req.user.id, challenge.id);
+  if (!participation) {
+    res.status(403).json({ error: "Not a participant" });
     return;
   }
 
@@ -448,7 +466,7 @@ router.get("/challenges/:id/progress", async (req, res): Promise<void> => {
     .from(progressLogsTable)
     .where(
       and(
-        eq(progressLogsTable.challengeId, challengeId),
+        eq(progressLogsTable.challengeId, challenge.id),
         eq(progressLogsTable.userId, req.user.id)
       )
     );
@@ -492,21 +510,17 @@ router.get("/challenges/:id/leaderboard", async (req, res): Promise<void> => {
     return;
   }
 
-  const challengeId = getParam(req.params, "id");
+  const slugOrId = getParam(req.params, "id");
 
-  const participation = await requireParticipant(req.user.id, challengeId);
-  if (!participation) {
-    res.status(403).json({ error: "Not a participant" });
+  const challenge = await findChallengeBySlugOrId(slugOrId);
+  if (!challenge) {
+    res.status(404).json({ error: "Challenge not found" });
     return;
   }
 
-  const [challenge] = await db
-    .select()
-    .from(challengesTable)
-    .where(eq(challengesTable.id, challengeId));
-
-  if (!challenge) {
-    res.status(404).json({ error: "Challenge not found" });
+  const participation = await requireParticipant(req.user.id, challenge.id);
+  if (!participation) {
+    res.status(403).json({ error: "Not a participant" });
     return;
   }
 

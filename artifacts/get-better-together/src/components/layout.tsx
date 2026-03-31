@@ -16,7 +16,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-sm">
               <Activity className="w-5 h-5 text-primary-foreground" />
             </div>
-            Get Better
+            Get Better Together
           </Link>
           
           <div className="flex items-center gap-3">

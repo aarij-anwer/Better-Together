@@ -111,6 +111,7 @@ export const ListChallengesHeader = zod.object({
 
 export const ListChallengesResponseItem = zod.object({
   id: zod.string(),
+  slug: zod.string(),
   title: zod.string(),
   activityType: zod.string(),
   unit: zod.string(),
@@ -184,6 +185,7 @@ export const GetChallengeHeader = zod.object({
 export const GetChallengeResponse = zod.object({
   challenge: zod.object({
     id: zod.string(),
+    slug: zod.string(),
     title: zod.string(),
     activityType: zod.string(),
     unit: zod.string(),
@@ -263,6 +265,7 @@ export const JoinChallengeHeader = zod.object({
 
 export const JoinChallengeResponse = zod.object({
   challengeId: zod.string(),
+  slug: zod.string(),
   message: zod.string(),
 });
 
