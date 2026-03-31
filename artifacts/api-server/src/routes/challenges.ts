@@ -497,8 +497,10 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
 
   res.json({
     totalLogged: progress.totalLogged,
+    totalTarget: progress.totalTarget,
     todayLogged: progress.todayLogged,
     todayTarget: progress.todayTarget,
+    valueLogged: valueToLog,
     ...(progress.days ? { days: progress.days } : {}),
   });
 });

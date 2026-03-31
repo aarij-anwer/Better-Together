@@ -56,12 +56,18 @@ export default function ChallengeDetail() {
           queryClient.invalidateQueries({ queryKey: getGetProgressQueryKey(challenge.slug || challenge.id) });
           queryClient.invalidateQueries({ queryKey: getListChallengesQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
-          const newTotal = (responseData as { totalLogged?: number })?.totalLogged ?? previousTotal + value;
-          const isNowComplete = target > 0 && newTotal >= target;
-          if (wasAlreadyComplete) {
+          const resp = responseData as { totalLogged?: number; totalTarget?: number; valueLogged?: number } | undefined;
+          const serverTotal = resp?.totalLogged ?? previousTotal + value;
+          const serverTarget = resp?.totalTarget ?? target;
+          const actualLogged = resp?.valueLogged ?? value;
+          const isNowComplete = serverTarget > 0 && serverTotal >= serverTarget;
+          const wasCapped = actualLogged < value;
+          if (wasAlreadyComplete || (wasCapped && actualLogged === 0)) {
             toast.info("You've already completed this challenge! Extra reps won't count toward the total.");
           } else if (isNowComplete) {
             toast.success("Challenge target reached! Amazing work! 🎉");
+          } else if (wasCapped) {
+            toast.success(`Logged ${actualLogged} ${challenge.unit} (capped — only ${serverTarget - serverTotal + actualLogged} remaining)`);
           } else {
             toast.success(`Logged ${value} ${challenge.unit}`);
           }
