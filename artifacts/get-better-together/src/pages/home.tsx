@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useGetDashboardSummary, useListChallenges, useJoinChallenge, getGetDashboardSummaryQueryKey, getListChallengesQueryKey } from "@workspace/api-client-react";
@@ -44,14 +44,6 @@ function Dashboard() {
   const joinMutation = useJoinChallenge();
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    if (challenges) {
-      const active = challenges.filter(c => c.state === 'active');
-      if (active.length === 1) {
-        setLocation(`/challenge/${active[0].slug}`);
-      }
-    }
-  }, [challenges, setLocation]);
 
   const handleJoinByCode = () => {
     const code = inviteInput.trim();
