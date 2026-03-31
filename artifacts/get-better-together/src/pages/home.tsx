@@ -28,7 +28,7 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
              Hold your friends accountable. Track your habits. Focused, rewarding, and a little competitive.
            </p>
            <Button size="lg" className="w-full text-xl h-16 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all" onClick={onLogin}>
-             Log in to Start
+             Sign in with Replit
            </Button>
         </div>
       </div>

@@ -2,6 +2,7 @@ import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthGuard } from "@/components/auth-guard";
 import NotFound from "@/pages/not-found";
 import Home from "@/pages/home";
 import ChallengeDetail from "@/pages/challenge-detail";
@@ -15,9 +16,9 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/challenge/new" component={ChallengeNew} />
-      <Route path="/challenge/:id" component={ChallengeDetail} />
-      <Route path="/challenge/:id/leaderboard" component={ChallengeLeaderboard} />
+      <Route path="/challenge/new">{() => <AuthGuard><ChallengeNew /></AuthGuard>}</Route>
+      <Route path="/challenge/:id">{() => <AuthGuard><ChallengeDetail /></AuthGuard>}</Route>
+      <Route path="/challenge/:id/leaderboard">{() => <AuthGuard><ChallengeLeaderboard /></AuthGuard>}</Route>
       <Route path="/join/:inviteCode" component={ChallengeJoin} />
       <Route component={NotFound} />
     </Switch>

@@ -61,7 +61,6 @@ export function computeDailyProgress(
   targetValue: number
 ): DayProgressItem[] {
   const start = startOfDay(startDate);
-  const today = toDateString(new Date());
 
   const days: DayProgressItem[] = [];
   for (let i = 0; i < durationDays; i++) {
@@ -95,8 +94,9 @@ export function computeDailyProgress(
     }
 
     if (remaining > 0) {
+      const logDayBound = logDate;
       for (let i = 0; i < durationDays; i++) {
-        if (days[i].date > today) break;
+        if (days[i].date > logDayBound) break;
         const canFill = Math.max(0, targetValue - days[i].logged);
         if (canFill > 0) {
           const fill = Math.min(remaining, canFill);
