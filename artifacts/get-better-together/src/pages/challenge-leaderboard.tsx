@@ -3,7 +3,7 @@ import { useGetChallenge, useGetLeaderboard, getGetChallengeQueryKey, getGetLead
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Activity, ArrowLeft, Trophy, Flame } from "lucide-react";
+import { Activity, ArrowLeft, Trophy, Flame, Users } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 

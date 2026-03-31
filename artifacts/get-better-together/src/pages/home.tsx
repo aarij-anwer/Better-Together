@@ -39,10 +39,13 @@ function Dashboard() {
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (challenges?.length === 1) {
-      if (!sessionStorage.getItem('dashboard_redirected')) {
-        sessionStorage.setItem('dashboard_redirected', 'true');
-        setLocation(`/challenge/${challenges[0].id}`);
+    if (challenges) {
+      const active = challenges.filter(c => c.state === 'active');
+      if (active.length === 1) {
+        if (!sessionStorage.getItem('dashboard_redirected')) {
+          sessionStorage.setItem('dashboard_redirected', 'true');
+          setLocation(`/challenge/${active[0].id}`);
+        }
       }
     }
   }, [challenges, setLocation]);

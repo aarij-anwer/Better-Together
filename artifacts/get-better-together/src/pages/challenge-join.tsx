@@ -22,8 +22,7 @@ export default function ChallengeJoin() {
 
   const handleJoin = () => {
     if (!isAuthenticated) {
-      sessionStorage.setItem('join_redirect', `/join/${inviteCode}`);
-      login();
+      login(`/join/${inviteCode}`);
       return;
     }
     
