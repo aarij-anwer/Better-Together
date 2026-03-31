@@ -1,0 +1,132 @@
+import { useEffect } from "react";
+import { useLocation } from "wouter";
+import { useAuth } from "@workspace/replit-auth-web";
+import { useGetDashboardSummary, useListChallenges, getGetDashboardSummaryQueryKey, getListChallengesQueryKey } from "@workspace/api-client-react";
+import { Layout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Plus, Trophy, Activity, Clock, ArrowRight } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { formatActivityName } from "@/lib/constants";
+
+function Welcome({ onLogin }: { onLogin: () => void }) {
+  return (
+    <div className="min-h-screen flex flex-col bg-background">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 relative overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img src="/hero-bg.png" alt="" className="w-full h-full object-cover opacity-90 mix-blend-multiply" />
+        </div>
+        <div className="relative z-10 max-w-lg w-full bg-white/90 backdrop-blur-2xl p-10 rounded-[2rem] border border-white/40 shadow-2xl text-center">
+           <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
+             <Activity className="w-8 h-8 text-primary-foreground" />
+           </div>
+           <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-foreground">Get Better Together</h1>
+           <p className="text-lg md:text-xl text-muted-foreground mb-10 leading-relaxed font-medium">
+             Hold your friends accountable. Track your habits. Focused, rewarding, and a little competitive.
+           </p>
+           <Button size="lg" className="w-full text-xl h-16 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all" onClick={onLogin}>
+             Log in to Start
+           </Button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Dashboard() {
+  const { data: summary, isLoading: isSummaryLoading } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
+  const { data: challenges, isLoading: isChallengesLoading } = useListChallenges({ query: { queryKey: getListChallengesQueryKey() } });
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (challenges?.length === 1) {
+      if (!sessionStorage.getItem('dashboard_redirected')) {
+        sessionStorage.setItem('dashboard_redirected', 'true');
+        setLocation(`/challenge/${challenges[0].id}`);
+      }
+    }
+  }, [challenges, setLocation]);
+
+  if (isSummaryLoading || isChallengesLoading) return (
+    <Layout>
+      <div className="flex-1 flex items-center justify-center">
+        <Activity className="w-8 h-8 text-primary animate-pulse" />
+      </div>
+    </Layout>
+  );
+
+  return (
+    <Layout>
+      <div className="max-w-3xl mx-auto w-full px-4 py-8">
+        <div className="flex items-center gap-6 mb-10 bg-card p-6 md:p-8 rounded-[2rem] border shadow-sm">
+          <div>
+            <div className="text-sm font-bold text-muted-foreground mb-1 uppercase tracking-wider">Today</div>
+            <div className="text-4xl font-black tracking-tight">{summary?.totalCompletedToday || 0} <span className="text-xl text-muted-foreground font-semibold">logs</span></div>
+          </div>
+          <div className="w-px h-16 bg-border mx-2"></div>
+          <div>
+            <div className="text-sm font-bold text-muted-foreground mb-1 uppercase tracking-wider">Active</div>
+            <div className="text-4xl font-black tracking-tight">{summary?.activeChallenges || 0} <span className="text-xl text-muted-foreground font-semibold">challenges</span></div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-black tracking-tight">Your Challenges</h2>
+          {challenges && challenges.length > 0 && (
+            <Button onClick={() => setLocation('/challenge/new')} variant="outline" className="rounded-full h-10 px-4 font-bold border-2">
+              <Plus className="w-4 h-4 mr-2" /> New
+            </Button>
+          )}
+        </div>
+
+        {challenges?.length === 0 ? (
+          <div className="text-center py-20 px-4 bg-card rounded-[2rem] border border-dashed shadow-sm">
+            <div className="w-20 h-20 bg-primary/10 text-primary rounded-[1.5rem] flex items-center justify-center mx-auto mb-6">
+              <Trophy className="w-10 h-10" />
+            </div>
+            <h3 className="text-2xl font-black tracking-tight mb-3">No active challenges</h3>
+            <p className="text-muted-foreground mb-8 max-w-sm mx-auto text-lg font-medium">Create a challenge and invite your friends to start getting better together.</p>
+            <Button onClick={() => setLocation('/challenge/new')} size="lg" className="rounded-2xl h-14 px-8 text-lg font-bold shadow-md">
+              Create your first challenge
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {challenges?.map(c => (
+              <Card key={c.id} className="p-5 md:p-6 rounded-[1.5rem] hover:shadow-md hover:border-primary/50 transition-all cursor-pointer border group" onClick={() => setLocation(`/challenge/${c.id}`)}>
+                <div className="flex justify-between items-start mb-6">
+                   <div>
+                     <h3 className="font-black text-2xl tracking-tight mb-2 group-hover:text-primary transition-colors">{c.title}</h3>
+                     <div className="flex items-center gap-3 text-sm text-muted-foreground font-semibold">
+                       <span className="flex items-center gap-1.5 bg-secondary px-2.5 py-1 rounded-lg text-secondary-foreground"><Activity className="w-4 h-4" /> {formatActivityName(c.activityType)}</span>
+                       <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {c.durationDays}d</span>
+                     </div>
+                   </div>
+                   <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                     <ArrowRight className="w-5 h-5" />
+                   </div>
+                </div>
+                
+                <div>
+                   <div className="flex justify-between text-sm mb-2 font-bold text-muted-foreground">
+                     <span className="uppercase tracking-wider">{c.type === 'daily' ? 'Today' : 'Total'}</span>
+                     <span>{c.type === 'daily' ? c.todayLogged : c.totalLogged} / {c.type === 'daily' ? c.todayTarget : c.targetValue} {c.unit}</span>
+                   </div>
+                   <Progress value={c.type === 'daily' ? (c.todayLogged / c.todayTarget) * 100 : (c.totalLogged / c.targetValue) * 100} className="h-3 rounded-full bg-secondary [&>div]:bg-primary" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
+      </div>
+    </Layout>
+  )
+}
+
+export default function Home() {
+  const { isAuthenticated, login, isLoading } = useAuth();
+  
+  if (isLoading) return <div className="min-h-screen bg-background" />;
+  if (!isAuthenticated) return <Welcome onLogin={login} />;
+  return <Dashboard />;
+}

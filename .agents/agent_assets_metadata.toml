@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "dYtKl3dlM1Lyl5hKdebzE"
+uri = "file://artifacts/get-better-together/public/hero-bg.png"
+type = "image"
+title = "Clean abstract runners"

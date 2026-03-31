@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "Get Better Together"
+version = "1.0.0"
+id = "artifacts/get-better-together"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20892
+
+[services.development]
+run = "pnpm --filter @workspace/get-better-together run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/get-better-together", "run", "build" ]
+publicDir = "artifacts/get-better-together/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20892"
+BASE_PATH = "/"

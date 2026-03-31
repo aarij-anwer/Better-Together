@@ -3,13 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Get Better Together API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: Auth
+    description: Browser and mobile authentication endpoints.
+  - name: challenges
+    description: Challenge operations
+  - name: progress
+    description: Progress logging
+  - name: leaderboard
+    description: Leaderboard operations
+  - name: dashboard
+    description: Dashboard summary
 paths:
   /healthz:
     get:
@@ -24,7 +34,435 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/user:
+    get:
+      tags: [Auth]
+      operationId: getCurrentAuthUser
+      summary: Get the currently authenticated user
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '200':
+          description: Auth status resolved successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthUserEnvelope'
+  /login:
+    get:
+      tags: [Auth]
+      operationId: beginBrowserLogin
+      summary: Start the browser OIDC login flow
+      parameters:
+        - name: returnTo
+          in: query
+          required: false
+          description: Relative path to redirect to after login (must start with `/`). Defaults to `/`.
+          schema:
+            type: string
+      responses:
+        '302':
+          description: Redirect to the OIDC authorization endpoint.
+  /callback:
+    get:
+      tags: [Auth]
+      operationId: handleBrowserLoginCallback
+      summary: Complete the browser OIDC login flow
+      parameters:
+        - name: code
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: state
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: iss
+          in: query
+          required: false
+          schema:
+            type: string
+            format: uri
+      responses:
+        '302':
+          description: Redirect to the returnTo path on success or /api/login on failure.
+  /logout:
+    get:
+      tags: [Auth]
+      operationId: logoutBrowserSession
+      summary: Clear the session and begin OIDC logout
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        '302':
+          description: Redirect to the OIDC provider logout URL.
+  /mobile-auth/token-exchange:
+    post:
+      tags: [Auth]
+      operationId: exchangeMobileAuthorizationCode
+      summary: Exchange a mobile OIDC code for a session token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MobileTokenExchangeRequest'
+      responses:
+        '200':
+          description: Session created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MobileTokenExchangeSuccess'
+        '400':
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '401':
+          description: Token did not contain usable claims.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Token exchange failed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /mobile-auth/logout:
+    post:
+      tags: [Auth]
+      operationId: logoutMobileSession
+      summary: Delete a mobile session token
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+      responses:
+        '200':
+          description: Logout processed.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogoutSuccess'
+
+  /challenges:
+    get:
+      operationId: listChallenges
+      tags: [challenges]
+      summary: List challenges for the current user
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        "200":
+          description: List of user challenges
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ChallengeWithProgress"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+    post:
+      operationId: createChallenge
+      tags: [challenges]
+      summary: Create a new challenge
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChallengeBody"
+      responses:
+        "201":
+          description: Challenge created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Challenge"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /challenges/{id}:
+    get:
+      operationId: getChallenge
+      tags: [challenges]
+      summary: Get challenge details with progress
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Challenge details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChallengeDetail"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /challenges/preview/{inviteCode}:
+    get:
+      operationId: previewChallenge
+      tags: [challenges]
+      summary: Public preview of a challenge by invite code (no auth required)
+      parameters:
+        - name: inviteCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Challenge preview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChallengePreview"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /challenges/join/{inviteCode}:
+    post:
+      operationId: joinChallenge
+      tags: [challenges]
+      summary: Join a challenge by invite code
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: inviteCode
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Joined successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JoinChallengeResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Challenge not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "409":
+          description: Already joined
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /challenges/{id}/log:
+    post:
+      operationId: logProgress
+      tags: [progress]
+      summary: Log progress for a challenge
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogProgressBody"
+      responses:
+        "200":
+          description: Progress logged
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogProgressResponse"
+        "400":
+          description: Invalid input or logging not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "403":
+          description: Not a participant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Challenge not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /challenges/{id}/progress:
+    get:
+      operationId: getProgress
+      tags: [progress]
+      summary: Get user's progress for a challenge (per-day breakdown for daily, total for total)
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Progress data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProgressData"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /challenges/{id}/leaderboard:
+    get:
+      operationId: getLeaderboard
+      tags: [leaderboard]
+      summary: Get leaderboard for a challenge
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Leaderboard data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/LeaderboardEntry"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get today's summary across all active challenges
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
 components:
+  parameters:
+    AuthorizationSessionHeader:
+      name: Authorization
+      in: header
+      required: false
+      description: Opaque session token — Bearer <sid>.
+      schema:
+        type: string
+    SessionCookie:
+      name: sid
+      in: cookie
+      required: false
+      description: Browser session cookie.
+      schema:
+        type: string
+
   schemas:
     HealthStatus:
       type: object
@@ -34,3 +472,305 @@ components:
       required:
         - status
 
+    AuthUser:
+      type: object
+      required: [id, email, firstName, lastName, profileImageUrl]
+      properties:
+        id:
+          type: string
+        email:
+          type: [string, 'null']
+          format: email
+        firstName:
+          type: [string, 'null']
+        lastName:
+          type: [string, 'null']
+        profileImageUrl:
+          type: [string, 'null']
+    AuthUserEnvelope:
+      type: object
+      required: [user]
+      properties:
+        user:
+          oneOf:
+            - $ref: '#/components/schemas/AuthUser'
+            - type: 'null'
+    MobileTokenExchangeRequest:
+      type: object
+      required: [code, code_verifier, redirect_uri, state]
+      properties:
+        code:
+          type: string
+          minLength: 1
+        code_verifier:
+          type: string
+          minLength: 1
+        redirect_uri:
+          type: string
+          minLength: 1
+          format: uri
+        state:
+          type: string
+          minLength: 1
+        nonce:
+          type: string
+          minLength: 1
+    MobileTokenExchangeSuccess:
+      type: object
+      required: [token]
+      properties:
+        token:
+          type: string
+    LogoutSuccess:
+      type: object
+      required: [success]
+      properties:
+        success:
+          type: boolean
+          const: true
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    CreateChallengeBody:
+      type: object
+      required: [title, activityType, type, targetValue, durationDays]
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 100
+        activityType:
+          type: string
+          enum: [pushups, situps, squats, pullups, burpees, running, walking, cycling, swimming, steps, meditation, reading, water, custom]
+        type:
+          type: string
+          enum: [daily, total]
+        targetValue:
+          type: integer
+          minimum: 1
+        durationDays:
+          type: integer
+          minimum: 1
+          maximum: 365
+        startDate:
+          type: string
+          format: date
+
+    Challenge:
+      type: object
+      required: [id, title, activityType, unit, type, targetValue, durationDays, startDate, createdById, inviteCode, createdAt, state]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        activityType:
+          type: string
+        unit:
+          type: string
+        type:
+          type: string
+          enum: [daily, total]
+        targetValue:
+          type: integer
+        durationDays:
+          type: integer
+        startDate:
+          type: string
+          format: date-time
+        createdById:
+          type: string
+        inviteCode:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        state:
+          type: string
+          enum: [not_started, active, completed]
+        participantCount:
+          type: integer
+
+    ChallengeWithProgress:
+      type: object
+      required: [id, title, activityType, unit, type, targetValue, durationDays, startDate, createdById, inviteCode, createdAt, state, totalLogged, todayLogged, todayTarget, participantCount]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        activityType:
+          type: string
+        unit:
+          type: string
+        type:
+          type: string
+          enum: [daily, total]
+        targetValue:
+          type: integer
+        durationDays:
+          type: integer
+        startDate:
+          type: string
+          format: date-time
+        createdById:
+          type: string
+        inviteCode:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        state:
+          type: string
+          enum: [not_started, active, completed]
+        totalLogged:
+          type: integer
+        todayLogged:
+          type: integer
+        todayTarget:
+          type: integer
+        participantCount:
+          type: integer
+
+    ChallengeDetail:
+      type: object
+      required: [challenge, userProgress, leaderboard, streak]
+      properties:
+        challenge:
+          $ref: "#/components/schemas/Challenge"
+        userProgress:
+          $ref: "#/components/schemas/ProgressData"
+        leaderboard:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
+        streak:
+          type: integer
+
+    ChallengePreview:
+      type: object
+      required: [title, activityType, unit, type, targetValue, durationDays, startDate, state, participantCount]
+      properties:
+        title:
+          type: string
+        activityType:
+          type: string
+        unit:
+          type: string
+        type:
+          type: string
+          enum: [daily, total]
+        targetValue:
+          type: integer
+        durationDays:
+          type: integer
+        startDate:
+          type: string
+          format: date-time
+        state:
+          type: string
+          enum: [not_started, active, completed]
+        participantCount:
+          type: integer
+
+    JoinChallengeResponse:
+      type: object
+      required: [challengeId, message]
+      properties:
+        challengeId:
+          type: string
+        message:
+          type: string
+
+    LogProgressBody:
+      type: object
+      required: [value]
+      properties:
+        value:
+          type: integer
+          minimum: 1
+
+    LogProgressResponse:
+      type: object
+      required: [totalLogged, todayLogged, todayTarget]
+      properties:
+        totalLogged:
+          type: integer
+        todayLogged:
+          type: integer
+        todayTarget:
+          type: integer
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/DayProgress"
+
+    ProgressData:
+      type: object
+      required: [totalLogged, totalTarget, todayLogged, todayTarget, streak]
+      properties:
+        totalLogged:
+          type: integer
+        totalTarget:
+          type: integer
+        todayLogged:
+          type: integer
+        todayTarget:
+          type: integer
+        streak:
+          type: integer
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/DayProgress"
+
+    DayProgress:
+      type: object
+      required: [date, logged, target, completed]
+      properties:
+        date:
+          type: string
+          format: date
+        logged:
+          type: integer
+        target:
+          type: integer
+        completed:
+          type: boolean
+
+    LeaderboardEntry:
+      type: object
+      required: [userId, userName, profileImageUrl, totalLogged, percentComplete, rank, streak]
+      properties:
+        userId:
+          type: string
+        userName:
+          type: string
+        profileImageUrl:
+          type: [string, 'null']
+        totalLogged:
+          type: integer
+        percentComplete:
+          type: number
+          format: float
+        rank:
+          type: integer
+        streak:
+          type: integer
+
+    DashboardSummary:
+      type: object
+      required: [totalCompletedToday, completedChallengesToday, totalChallenges, activeChallenges]
+      properties:
+        totalCompletedToday:
+          type: integer
+        completedChallengesToday:
+          type: integer
+        totalChallenges:
+          type: integer
+        activeChallenges:
+          type: integer

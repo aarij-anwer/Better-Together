@@ -1,0 +1,200 @@
+import { useLocation, useRoute } from "wouter";
+import { useGetChallenge, useLogProgress, getGetChallengeQueryKey, getGetProgressQueryKey } from "@workspace/api-client-react";
+import { Layout } from "@/components/layout";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Activity, Trophy, Clock, Users, ArrowRight, Share, CheckCircle2, Flame } from "lucide-react";
+import { ProgressRing } from "@/components/ui/progress-ring";
+import { Progress } from "@/components/ui/progress";
+import { formatActivityName } from "@/lib/constants";
+import { useQueryClient } from "@tanstack/react-query";
+import { useState, useRef, useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+export default function ChallengeDetail() {
+  const [, params] = useRoute('/challenge/:id');
+  const id = params?.id;
+  const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
+  const logMutation = useLogProgress();
+  const [customVal, setCustomVal] = useState("");
+  
+  const { data, isLoading } = useGetChallenge(id as string, { query: { enabled: !!id, queryKey: getGetChallengeQueryKey(id as string) } });
+  
+  if (isLoading) return (
+    <Layout>
+      <div className="flex-1 flex items-center justify-center">
+        <Activity className="w-8 h-8 text-primary animate-pulse" />
+      </div>
+    </Layout>
+  );
+  
+  if (!data) return (
+    <Layout>
+      <div className="p-8 text-center text-xl font-bold">Challenge not found</div>
+    </Layout>
+  );
+
+  const { challenge, userProgress, leaderboard, streak } = data;
+
+  const handleLog = (value: number) => {
+    if (challenge.state === 'not_started') return;
+    logMutation.mutate(
+      { id: challenge.id, data: { value } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getGetChallengeQueryKey(challenge.id) });
+          queryClient.invalidateQueries({ queryKey: getGetProgressQueryKey(challenge.id) });
+          toast.success(`Logged ${value} ${challenge.unit}`);
+          setCustomVal("");
+        }
+      }
+    );
+  };
+
+  const copyInvite = () => {
+    const url = `${window.location.origin}/join/${challenge.inviteCode}`;
+    navigator.clipboard.writeText(url);
+    toast.success("Invite link copied to clipboard");
+  };
+
+  const isCompleted = challenge.state === 'completed';
+  const isNotStarted = challenge.state === 'not_started';
+
+  return (
+    <Layout>
+      <div className="max-w-4xl mx-auto w-full px-4 py-8">
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-8">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-4xl font-black tracking-tight">{challenge.title}</h1>
+              {isCompleted && <span className="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-1 rounded-md flex items-center"><CheckCircle2 className="w-3 h-3 mr-1" /> Completed</span>}
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground font-bold">
+              <span className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg"><Activity className="w-4 h-4" /> {formatActivityName(challenge.activityType)}</span>
+              <span className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg"><Clock className="w-4 h-4" /> {challenge.durationDays} days</span>
+              <span className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg"><Users className="w-4 h-4" /> {challenge.participantCount || 0} participants</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {streak > 0 && (
+              <div className="bg-orange-100 text-orange-600 px-4 py-2 rounded-xl font-black flex items-center gap-2 text-sm shadow-sm border border-orange-200">
+                <Flame className="w-5 h-5" /> {streak} Day Streak
+              </div>
+            )}
+            <Button onClick={copyInvite} variant="outline" className="rounded-xl h-11 border-2 font-bold bg-card text-primary border-primary/20 hover:bg-primary/5">
+              <Share className="w-4 h-4 mr-2" /> Invite
+            </Button>
+          </div>
+        </div>
+
+        {isNotStarted && (
+           <div className="bg-secondary/50 border-2 border-secondary text-secondary-foreground p-6 rounded-2xl mb-8 text-center shadow-sm">
+             <h3 className="font-black text-xl mb-1">Challenge hasn't started yet</h3>
+             <p className="text-muted-foreground font-medium text-lg">Starts on {new Date(challenge.startDate).toLocaleDateString()}</p>
+           </div>
+        )}
+
+        <div className="grid md:grid-cols-[1fr_340px] gap-6">
+           <div className="space-y-6">
+              <Card className="p-6 md:p-10 rounded-[2rem] border shadow-sm flex flex-col items-center">
+                {challenge.type === 'daily' ? (
+                  <>
+                    <h3 className="font-bold text-lg text-muted-foreground uppercase tracking-widest mb-8">Today's Progress</h3>
+                    <ProgressRing progress={(userProgress.todayLogged / userProgress.todayTarget) * 100} size={220} strokeWidth={18} />
+                    <div className="mt-8 mb-10 text-center">
+                      <div className="text-6xl font-black tracking-tight">{userProgress.todayLogged} <span className="text-3xl text-muted-foreground font-semibold">/ {userProgress.todayTarget}</span></div>
+                      <div className="text-xl text-muted-foreground font-bold mt-2 uppercase tracking-wider">{challenge.unit}</div>
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full text-center py-6">
+                    <h3 className="font-bold text-lg text-muted-foreground uppercase tracking-widest mb-8">Total Progress</h3>
+                    <div className="mb-6">
+                      <div className="text-6xl font-black tracking-tight mb-6">{userProgress.totalLogged} <span className="text-3xl text-muted-foreground font-semibold">/ {challenge.targetValue}</span></div>
+                      <Progress value={(userProgress.totalLogged / challenge.targetValue) * 100} className="h-6 rounded-full" />
+                    </div>
+                    <div className="text-xl text-muted-foreground font-bold uppercase tracking-wider">{challenge.unit}</div>
+                  </div>
+                )}
+
+                <div className="w-full border-t pt-8">
+                  <h4 className="font-black text-xl mb-6 text-center">Log Activity</h4>
+                  <div className="flex gap-3 justify-center mb-6">
+                    <Button onClick={() => handleLog(10)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+10</Button>
+                    <Button onClick={() => handleLog(20)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+20</Button>
+                    <Button onClick={() => handleLog(50)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+50</Button>
+                  </div>
+                  <div className="flex gap-3 max-w-[300px] mx-auto">
+                    <Input 
+                      type="number" 
+                      placeholder="Custom..." 
+                      className="h-14 rounded-xl text-center font-bold text-lg border-2" 
+                      value={customVal}
+                      onChange={e => setCustomVal(e.target.value)}
+                      disabled={isNotStarted}
+                    />
+                    <Button 
+                      onClick={() => handleLog(Number(customVal))} 
+                      disabled={isNotStarted || !customVal || Number(customVal) <= 0 || logMutation.isPending}
+                      className="h-14 rounded-xl px-8 font-bold text-lg shadow-sm"
+                    >
+                      Add
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {challenge.type === 'daily' && userProgress.days && (
+                <Card className="p-6 rounded-[2rem] border shadow-sm">
+                  <h3 className="font-bold text-lg mb-6 uppercase tracking-wider text-muted-foreground">Past 7 Days</h3>
+                  <div className="flex gap-2 justify-between">
+                    {userProgress.days.slice(-7).map(day => (
+                      <div key={day.date} className="flex flex-col items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-black transition-colors ${day.completed ? 'bg-primary text-primary-foreground shadow-md' : day.logged > 0 ? 'bg-primary/20 text-primary' : 'bg-secondary text-muted-foreground'}`}>
+                          {day.completed ? <CheckCircle2 className="w-5 h-5" /> : (day.logged > 0 ? '·' : '')}
+                        </div>
+                        <span className="text-xs font-bold text-muted-foreground uppercase">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'narrow' })}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              )}
+           </div>
+
+           <div className="space-y-6">
+              <Card className="p-6 rounded-[2rem] border shadow-sm bg-card/50">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-black text-xl flex items-center gap-2"><Trophy className="w-6 h-6 text-primary" /> Leaderboard</h3>
+                  <Button variant="ghost" size="sm" onClick={() => setLocation(`/challenge/${id}/leaderboard`)} className="text-primary hover:text-primary/80 font-bold px-2 rounded-lg">
+                    See All <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </div>
+                
+                <div className="space-y-5">
+                  {leaderboard.slice(0, 5).map((entry, idx) => (
+                    <div key={entry.userId} className="flex items-center gap-3 group cursor-pointer" onClick={() => setLocation(`/challenge/${id}/leaderboard`)}>
+                      <div className={`w-6 text-center font-black text-lg ${idx === 0 ? 'text-yellow-500' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-amber-700' : 'text-muted-foreground'}`}>
+                        {entry.rank}
+                      </div>
+                      <Avatar className="w-10 h-10 border-2 shadow-sm transition-transform group-hover:scale-105">
+                        {entry.profileImageUrl ? <AvatarImage src={entry.profileImageUrl} /> : <AvatarFallback className="bg-secondary font-bold text-sm">{entry.userName?.charAt(0) || 'U'}</AvatarFallback>}
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-bold text-base truncate leading-none mb-1">{entry.userName || 'Unknown'}</div>
+                        <div className="text-sm font-semibold text-muted-foreground leading-none">{entry.totalLogged} {challenge.unit}</div>
+                      </div>
+                      {entry.streak > 0 && <div className="text-sm font-black text-orange-500 flex items-center bg-orange-100 px-2 py-0.5 rounded-md"><Flame className="w-3 h-3 mr-1" /> {entry.streak}</div>}
+                    </div>
+                  ))}
+                  {leaderboard.length === 0 && <div className="text-sm font-semibold text-muted-foreground text-center py-6">No participants yet</div>}
+                </div>
+              </Card>
+           </div>
+        </div>
+      </div>
+    </Layout>
+  )
+}
