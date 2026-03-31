@@ -75,6 +75,8 @@ export default function ChallengeDetail() {
   const todayDayIdx = userProgress.days?.findIndex(d => d.date === todayStr) ?? -1;
   const viewIdx = selectedDayIdx ?? todayDayIdx;
   const viewDay = userProgress.days && viewIdx >= 0 ? userProgress.days[viewIdx] : null;
+  const isViewingRestDay = viewDay != null && viewDay.target === 0;
+  const isTodayRestDay = userProgress.todayTarget === 0;
 
   const formatDayDate = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00:00');
@@ -128,16 +130,25 @@ export default function ChallengeDetail() {
                         : "Today's Progress"}
                     </h3>
                     <ProgressRing
-                      progress={viewDay ? Math.min(100, (viewDay.logged / viewDay.target) * 100) : 0}
+                      progress={viewDay ? (isViewingRestDay ? 100 : Math.min(100, (viewDay.logged / viewDay.target) * 100)) : 0}
                       size={220}
                       strokeWidth={18}
                     />
                     <div className="mt-8 mb-10 text-center">
-                      <div className="text-6xl font-black tracking-tight">
-                        {viewDay?.logged ?? 0}
-                        <span className="text-3xl text-muted-foreground font-semibold"> / {viewDay?.target ?? userProgress.todayTarget}</span>
-                      </div>
-                      <div className="text-xl text-muted-foreground font-bold mt-2 uppercase tracking-wider">{challenge.unit}</div>
+                      {isViewingRestDay ? (
+                        <>
+                          <div className="text-4xl font-black tracking-tight text-green-600">Rest Day</div>
+                          <div className="text-lg text-muted-foreground font-bold mt-2">Take a break and recover!</div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-6xl font-black tracking-tight">
+                            {viewDay?.logged ?? 0}
+                            <span className="text-3xl text-muted-foreground font-semibold"> / {viewDay?.target ?? userProgress.todayTarget}</span>
+                          </div>
+                          <div className="text-xl text-muted-foreground font-bold mt-2 uppercase tracking-wider">{challenge.unit}</div>
+                        </>
+                      )}
                     </div>
                   </>
                 ) : (
@@ -158,7 +169,7 @@ export default function ChallengeDetail() {
                   </div>
                 )}
 
-                {!isNotStarted && (
+                {!isNotStarted && !isTodayRestDay && (
                   <div className="w-full border-t pt-8">
                     <h4 className="font-black text-xl mb-6 text-center">Log Activity</h4>
                     <div className="flex gap-3 justify-center mb-6 max-w-[340px] mx-auto">
@@ -204,9 +215,9 @@ export default function ChallengeDetail() {
                             `}
                           >
                             <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black transition-colors
-                              ${day.completed ? 'bg-primary text-primary-foreground shadow-md' : day.logged > 0 ? 'bg-primary/20 text-primary' : isPast ? 'bg-red-100 text-red-400' : 'bg-secondary text-muted-foreground'}
+                              ${day.target === 0 ? 'bg-gray-100 text-gray-400' : day.completed ? 'bg-primary text-primary-foreground shadow-md' : day.logged > 0 ? 'bg-primary/20 text-primary' : isPast ? 'bg-red-100 text-red-400' : 'bg-secondary text-muted-foreground'}
                             `}>
-                              {day.completed ? <CheckCircle2 className="w-4 h-4" /> : (day.logged > 0 ? Math.round((day.logged / day.target) * 100) + '%' : '')}
+                              {day.target === 0 ? 'R' : day.completed ? <CheckCircle2 className="w-4 h-4" /> : (day.logged > 0 ? Math.round((day.logged / day.target) * 100) + '%' : '')}
                             </div>
                             <span className={`text-[10px] font-bold uppercase leading-tight ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
                               {isToday ? 'Now' : new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'narrow' })}
