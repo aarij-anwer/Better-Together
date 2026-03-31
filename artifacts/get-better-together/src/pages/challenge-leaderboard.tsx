@@ -38,7 +38,7 @@ export default function ChallengeLeaderboard() {
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto w-full px-4 py-8">
+      <div className="max-w-3xl mx-auto w-full px-6 md:px-8 py-8">
          <Button variant="ghost" onClick={() => setLocation(`/challenge/${id}`)} className="mb-6 -ml-4 text-muted-foreground hover:text-foreground font-bold">
            <ArrowLeft className="w-5 h-5 mr-2" /> Back to Challenge
          </Button>

@@ -11,7 +11,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background">
       <header className="h-16 border-b bg-card/50 backdrop-blur-xl sticky top-0 z-50">
-        <div className="max-w-4xl mx-auto px-4 h-full flex items-center justify-between">
+        <div className="max-w-4xl mx-auto px-6 md:px-8 h-full flex items-center justify-between">
           <Link href="/" className="font-bold text-xl tracking-tight flex items-center gap-2 text-primary hover:opacity-80 transition-opacity">
             <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-sm">
               <Activity className="w-5 h-5 text-primary-foreground" />

@@ -85,7 +85,7 @@ export default function ChallengeDetail() {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto w-full px-4 py-8">
+      <div className="max-w-4xl mx-auto w-full px-6 md:px-8 py-8">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">

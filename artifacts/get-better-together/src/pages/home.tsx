@@ -81,7 +81,7 @@ function Dashboard() {
 
   return (
     <Layout>
-      <div className="max-w-3xl mx-auto w-full px-4 py-8">
+      <div className="max-w-3xl mx-auto w-full px-6 md:px-8 py-8">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
           <div className="bg-card p-5 rounded-2xl border shadow-sm">
             <div className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">Today</div>
