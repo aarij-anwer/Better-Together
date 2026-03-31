@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -54,6 +54,13 @@ export default function ChallengeNew() {
   const totalTarget = (targetValue || 0) * activeDays;
 
   const showCustomize = (durationDays || 0) >= 10;
+
+  useEffect(() => {
+    if (!showCustomize) {
+      setRandomizeReps(false);
+      setRestDayEnabled(false);
+    }
+  }, [showCustomize]);
 
   const handleActivityChange = (value: string, onChange: (value: string) => void) => {
     onChange(value);
