@@ -236,6 +236,10 @@ export interface JoinChallengeResponse {
   message: string;
 }
 
+export interface LeaveChallengeResponse {
+  message: string;
+}
+
 export interface LogProgressBody {
   /** @minimum 1 */
   value: number;

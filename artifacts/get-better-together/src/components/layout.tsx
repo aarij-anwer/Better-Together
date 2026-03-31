@@ -1,11 +1,8 @@
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@workspace/replit-auth-web";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Activity, Plus, User, LogOut, Home } from "lucide-react";
+import { Activity, Plus, User, Home } from "lucide-react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
   const [, setLocation] = useLocation();
 
   return (
@@ -26,22 +23,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => setLocation('/challenge/new')}>
               <Plus className="w-4 h-4" />
             </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full hover:bg-primary/10 hover:text-primary transition-colors">
-                  <User className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                <div className="px-2 py-2 text-sm font-medium opacity-70 truncate border-b mb-1">
-                  {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'My Account'}
-                </div>
-                <DropdownMenuItem onClick={logout} className="text-destructive focus:text-destructive cursor-pointer rounded-lg">
-                  <LogOut className="w-4 h-4 mr-2" /> Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="ghost" size="icon" className="w-9 h-9 rounded-full hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => setLocation('/profile')}>
+              <User className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </header>

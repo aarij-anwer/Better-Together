@@ -261,6 +261,43 @@ router.post("/challenges/join/:inviteCode", async (req, res): Promise<void> => {
   res.json({ challengeId: challenge.id, slug: challenge.slug, message: "Joined successfully" });
 });
 
+router.post("/challenges/:id/leave", async (req, res): Promise<void> => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const slugOrId = getParam(req.params, "id");
+
+  const challenge = await findChallengeBySlugOrId(slugOrId);
+  if (!challenge) {
+    res.status(404).json({ error: "Challenge not found" });
+    return;
+  }
+
+  const participation = await requireParticipant(req.user.id, challenge.id);
+  if (!participation) {
+    res.status(403).json({ error: "Not a participant" });
+    return;
+  }
+
+  await db.delete(participationsTable).where(
+    and(
+      eq(participationsTable.userId, req.user.id),
+      eq(participationsTable.challengeId, challenge.id)
+    )
+  );
+
+  await db.delete(progressLogsTable).where(
+    and(
+      eq(progressLogsTable.userId, req.user.id),
+      eq(progressLogsTable.challengeId, challenge.id)
+    )
+  );
+
+  res.json({ message: "Left challenge successfully" });
+});
+
 router.get("/challenges/:id", async (req, res): Promise<void> => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Unauthorized" });

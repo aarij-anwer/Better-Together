@@ -30,6 +30,7 @@ export * from "./handleBrowserLoginCallbackParams";
 export * from "./healthStatus";
 export * from "./joinChallengeResponse";
 export * from "./leaderboardEntry";
+export * from "./leaveChallengeResponse";
 export * from "./logoutSuccess";
 export * from "./logProgressBody";
 export * from "./logProgressResponse";

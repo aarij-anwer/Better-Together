@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
-import { useGetDashboardSummary, useListChallenges, useJoinChallenge, getGetDashboardSummaryQueryKey, getListChallengesQueryKey } from "@workspace/api-client-react";
+import { useListChallenges, useJoinChallenge, getGetDashboardSummaryQueryKey, getListChallengesQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -37,7 +37,6 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
 }
 
 function Dashboard() {
-  const { data: summary, isLoading: isSummaryLoading } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
   const { data: challenges, isLoading: isChallengesLoading } = useListChallenges({ query: { queryKey: getListChallengesQueryKey() } });
   const [, setLocation] = useLocation();
   const searchString = useSearch();
@@ -52,7 +51,6 @@ function Dashboard() {
       setLocation(`/challenge/${challenges[0].slug}`);
     }
   }, [challenges, setLocation, forceHome]);
-
 
   const handleJoinByCode = () => {
     const code = inviteInput.trim();
@@ -72,7 +70,7 @@ function Dashboard() {
     });
   };
 
-  if (isSummaryLoading || isChallengesLoading) return (
+  if (isChallengesLoading) return (
     <Layout>
       <div className="flex-1 flex items-center justify-center">
         <Activity className="w-8 h-8 text-primary animate-pulse" />
@@ -83,29 +81,6 @@ function Dashboard() {
   return (
     <Layout>
       <div className="max-w-3xl mx-auto w-full px-6 md:px-8 py-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
-          <div className="bg-card p-5 rounded-2xl border shadow-sm">
-            <div className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">Today</div>
-            <div className="text-3xl font-black tracking-tight">{summary?.totalCompletedToday || 0}</div>
-            <div className="text-sm text-muted-foreground font-semibold">logged</div>
-          </div>
-          <div className="bg-card p-5 rounded-2xl border shadow-sm">
-            <div className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">Done Today</div>
-            <div className="text-3xl font-black tracking-tight">{summary?.completedChallengesToday || 0}</div>
-            <div className="text-sm text-muted-foreground font-semibold">completed</div>
-          </div>
-          <div className="bg-card p-5 rounded-2xl border shadow-sm">
-            <div className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">Active</div>
-            <div className="text-3xl font-black tracking-tight">{summary?.activeChallenges || 0}</div>
-            <div className="text-sm text-muted-foreground font-semibold">challenges</div>
-          </div>
-          <div className="bg-card p-5 rounded-2xl border shadow-sm">
-            <div className="text-xs font-bold text-muted-foreground mb-1 uppercase tracking-wider">Total</div>
-            <div className="text-3xl font-black tracking-tight">{summary?.totalChallenges || 0}</div>
-            <div className="text-sm text-muted-foreground font-semibold">challenges</div>
-          </div>
-        </div>
-
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-black tracking-tight">Your Challenges</h2>
           <div className="flex items-center gap-2">
@@ -154,22 +129,25 @@ function Dashboard() {
                    <div>
                      <h3 className="font-black text-2xl tracking-tight mb-2 group-hover:text-primary transition-colors">{c.title}</h3>
                      <div className="flex items-center gap-3 text-sm text-muted-foreground font-semibold">
-                       <span className="flex items-center gap-1.5 bg-secondary px-2.5 py-1 rounded-lg text-secondary-foreground"><Activity className="w-4 h-4" /> {formatActivityName(c.activityType)}</span>
-                       <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {c.durationDays}d</span>
-                       {c.state !== 'active' && <span className="px-2 py-0.5 bg-secondary rounded-lg text-xs font-bold capitalize">{c.state === 'not_started' ? 'Upcoming' : 'Completed'}</span>}
+                       <span className="flex items-center gap-1.5"><Activity className="w-4 h-4" /> {formatActivityName(c.activityType)}</span>
+                       <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {c.durationDays} days</span>
                      </div>
                    </div>
-                   <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                     <ArrowRight className="w-5 h-5" />
-                   </div>
+                   <span className={`text-xs font-bold px-3 py-1.5 rounded-lg ${c.state === 'active' ? 'bg-green-100 text-green-800' : c.state === 'completed' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
+                     {c.state === 'active' ? 'Active' : c.state === 'completed' ? 'Completed' : 'Upcoming'}
+                   </span>
                 </div>
-                
-                <div>
-                   <div className="flex justify-between text-sm mb-2 font-bold text-muted-foreground">
-                     <span className="uppercase tracking-wider">{c.type === 'daily' ? 'Today' : 'Total'}</span>
-                     <span>{c.type === 'daily' ? c.todayLogged : c.totalLogged} / {c.type === 'daily' ? c.todayTarget : c.targetValue} {c.unit}</span>
-                   </div>
-                   <Progress value={Math.min(100, c.type === 'daily' ? (c.todayTarget > 0 ? (c.todayLogged / c.todayTarget) * 100 : 0) : (c.targetValue > 0 ? (c.totalLogged / c.targetValue) * 100 : 0))} className="h-3 rounded-full bg-secondary [&>div]:bg-primary" />
+                <div className="flex items-center gap-4">
+                  {(() => {
+                    const totalTarget = c.type === 'daily' ? c.targetValue * c.durationDays : c.targetValue;
+                    return (
+                      <>
+                        <Progress value={totalTarget > 0 ? Math.min(100, (c.totalLogged / totalTarget) * 100) : 0} className="h-3 flex-1 rounded-full" />
+                        <span className="text-sm font-bold whitespace-nowrap">{c.totalLogged}/{totalTarget} {c.unit}</span>
+                      </>
+                    );
+                  })()}
+                  <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
               </Card>
             ))}
@@ -177,13 +155,12 @@ function Dashboard() {
         )}
       </div>
     </Layout>
-  )
+  );
 }
 
 export default function Home() {
-  const { isAuthenticated, login, isLoading } = useAuth();
-  
-  if (isLoading) return <div className="min-h-screen bg-background" />;
-  if (!isAuthenticated) return <Welcome onLogin={login} />;
+  const { user, login } = useAuth();
+
+  if (!user) return <Welcome onLogin={login} />;
   return <Dashboard />;
 }

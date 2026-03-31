@@ -270,6 +270,24 @@ export const JoinChallengeResponse = zod.object({
 });
 
 /**
+ * @summary Leave a challenge
+ */
+export const LeaveChallengeParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const LeaveChallengeHeader = zod.object({
+  Authorization: zod
+    .string()
+    .optional()
+    .describe("Opaque session token — Bearer <sid>."),
+});
+
+export const LeaveChallengeResponse = zod.object({
+  message: zod.string(),
+});
+
+/**
  * @summary Log progress for a challenge
  */
 export const LogProgressParams = zod.object({

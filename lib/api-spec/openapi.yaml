@@ -305,6 +305,39 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /challenges/{id}/leave:
+    post:
+      operationId: leaveChallenge
+      tags: [challenges]
+      summary: Leave a challenge
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Left successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LeaveChallengeResponse"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "403":
+          description: Not a participant
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /challenges/{id}/log:
     post:
       operationId: logProgress
@@ -689,6 +722,13 @@ components:
           type: string
         slug:
           type: string
+        message:
+          type: string
+
+    LeaveChallengeResponse:
+      type: object
+      required: [message]
+      properties:
         message:
           type: string
 

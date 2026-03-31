@@ -9,6 +9,7 @@ import ChallengeDetail from "@/pages/challenge-detail";
 import ChallengeNew from "@/pages/challenge-new";
 import ChallengeJoin from "@/pages/challenge-join";
 import ChallengeLeaderboard from "@/pages/challenge-leaderboard";
+import Profile from "@/pages/profile";
 
 const queryClient = new QueryClient();
 
@@ -16,6 +17,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
+      <Route path="/profile">{() => <AuthGuard><Profile /></AuthGuard>}</Route>
       <Route path="/challenge/new">{() => <AuthGuard><ChallengeNew /></AuthGuard>}</Route>
       <Route path="/challenge/:id">{() => <AuthGuard><ChallengeDetail /></AuthGuard>}</Route>
       <Route path="/challenge/:id/leaderboard">{() => <AuthGuard><ChallengeLeaderboard /></AuthGuard>}</Route>

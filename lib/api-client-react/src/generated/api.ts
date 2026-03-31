@@ -30,6 +30,7 @@ import type {
   HealthStatus,
   JoinChallengeResponse,
   LeaderboardEntry,
+  LeaveChallengeResponse,
   LogProgressBody,
   LogProgressResponse,
   LogoutSuccess,
@@ -1066,6 +1067,90 @@ export const useJoinChallenge = <
   TContext
 > => {
   return useMutation(getJoinChallengeMutationOptions(options));
+};
+
+/**
+ * @summary Leave a challenge
+ */
+export const getLeaveChallengeUrl = (id: string) => {
+  return `/api/challenges/${id}/leave`;
+};
+
+export const leaveChallenge = async (
+  id: string,
+  options?: RequestInit,
+): Promise<LeaveChallengeResponse> => {
+  return customFetch<LeaveChallengeResponse>(getLeaveChallengeUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getLeaveChallengeMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof leaveChallenge>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof leaveChallenge>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["leaveChallenge"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof leaveChallenge>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return leaveChallenge(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type LeaveChallengeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof leaveChallenge>>
+>;
+
+export type LeaveChallengeMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Leave a challenge
+ */
+export const useLeaveChallenge = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof leaveChallenge>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof leaveChallenge>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getLeaveChallengeMutationOptions(options));
 };
 
 /**
