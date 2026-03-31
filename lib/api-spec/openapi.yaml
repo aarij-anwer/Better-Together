@@ -838,6 +838,14 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/DayProgress"
+        dailyTargets:
+          type: array
+          items:
+            type: integer
+        randomizeReps:
+          type: boolean
+        restDayEnabled:
+          type: boolean
 
     DayProgress:
       type: object

@@ -61,7 +61,7 @@ export function generateDailyTargets(
     .filter((i) => i >= 0);
 
   if (activeIndices.length > 0 && randomizeReps) {
-    const desiredTotal = baseTarget * activeIndices.length;
+    const desiredTotal = Math.round(baseTarget * activeIndices.length);
     let currentTotal = targets.reduce((sum, t) => sum + t, 0);
     let remaining = desiredTotal - currentTotal;
 
@@ -77,20 +77,24 @@ export function generateDailyTargets(
         if (remaining > 0) {
           const room = maxTarget - current;
           if (room > 0) {
-            const add = Math.min(remaining, room);
+            const add = Math.min(Math.round(remaining), room);
             targets[idx] = current + add;
             remaining -= add;
           }
         } else {
           const room = current - Math.max(minTarget, 1);
           if (room > 0) {
-            const sub = Math.min(-remaining, room);
+            const sub = Math.min(Math.round(-remaining), room);
             targets[idx] = current - sub;
             remaining += sub;
           }
         }
       }
     }
+  }
+
+  for (let i = 0; i < targets.length; i++) {
+    targets[i] = Math.round(targets[i]);
   }
 
   return targets;

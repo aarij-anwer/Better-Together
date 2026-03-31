@@ -191,6 +191,9 @@ export interface ProgressData {
   todayTarget: number;
   streak: number;
   days?: DayProgress[];
+  dailyTargets?: number[];
+  randomizeReps?: boolean;
+  restDayEnabled?: boolean;
 }
 
 export interface LeaderboardEntry {

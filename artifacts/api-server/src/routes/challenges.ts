@@ -554,6 +554,9 @@ router.get("/challenges/:id/progress", async (req, res): Promise<void> => {
     todayTarget: progress.todayTarget,
     streak,
     ...(progress.days ? { days: progress.days } : {}),
+    dailyTargets: challenge.dailyTargets ?? undefined,
+    randomizeReps: challenge.randomizeReps ?? undefined,
+    restDayEnabled: challenge.restDayEnabled ?? undefined,
   });
 });
 

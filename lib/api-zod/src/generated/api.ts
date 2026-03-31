@@ -248,6 +248,9 @@ export const GetChallengeResponse = zod.object({
         }),
       )
       .optional(),
+    dailyTargets: zod.array(zod.number()).optional(),
+    randomizeReps: zod.boolean().optional(),
+    restDayEnabled: zod.boolean().optional(),
   }),
   leaderboard: zod.array(
     zod.object({
@@ -384,6 +387,9 @@ export const GetProgressResponse = zod.object({
       }),
     )
     .optional(),
+  dailyTargets: zod.array(zod.number()).optional(),
+  randomizeReps: zod.boolean().optional(),
+  restDayEnabled: zod.boolean().optional(),
 });
 
 /**
