@@ -285,7 +285,7 @@ export default function ChallengeDetail() {
                 Day-by-day breakdown of targets for this challenge
               </DialogDescription>
             </DialogHeader>
-            <ul className="flex-1 overflow-y-auto px-6 pb-2 space-y-2" role="list">
+            <ul className="flex-1 overflow-y-auto px-6 pt-2 pb-2 space-y-2" role="list">
               {challenge.dailyTargets.map((target, idx) => {
                 const progressDay = userProgress.days?.[idx];
                 let dayDate: Date;
