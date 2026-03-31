@@ -236,6 +236,11 @@ export interface JoinChallengeResponse {
   message: string;
 }
 
+export interface UpdateProfileBody {
+  firstName: string;
+  lastName: string;
+}
+
 export interface LeaveChallengeResponse {
   message: string;
 }

@@ -100,6 +100,29 @@ export const LogoutMobileSessionResponse = zod.object({
 });
 
 /**
+ * @summary Update current user's profile (name only)
+ */
+export const UpdateProfileHeader = zod.object({
+  Authorization: zod
+    .string()
+    .optional()
+    .describe("Opaque session token — Bearer <sid>."),
+});
+
+export const UpdateProfileBody = zod.object({
+  firstName: zod.string(),
+  lastName: zod.string(),
+});
+
+export const UpdateProfileResponse = zod.object({
+  id: zod.string(),
+  email: zod.string().email().nullable(),
+  firstName: zod.string().nullable(),
+  lastName: zod.string().nullable(),
+  profileImageUrl: zod.string().nullable(),
+});
+
+/**
  * @summary List challenges for the current user
  */
 export const ListChallengesHeader = zod.object({

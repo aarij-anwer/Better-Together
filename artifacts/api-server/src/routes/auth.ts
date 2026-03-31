@@ -7,6 +7,7 @@ import {
   LogoutMobileSessionResponse,
 } from "@workspace/api-zod";
 import { db, usersTable } from "@workspace/db";
+import { eq } from "drizzle-orm";
 import {
   clearSession,
   getOidcConfig,
@@ -88,6 +89,27 @@ router.get("/auth/user", (req: Request, res: Response) => {
       user: req.isAuthenticated() ? req.user : null,
     }),
   );
+});
+
+router.patch("/auth/user/profile", async (req: Request, res: Response): Promise<void> => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const { firstName, lastName } = req.body;
+  if (typeof firstName !== "string" || typeof lastName !== "string") {
+    res.status(400).json({ error: "firstName and lastName are required" });
+    return;
+  }
+
+  const [updated] = await db
+    .update(usersTable)
+    .set({ firstName: firstName.trim(), lastName: lastName.trim() })
+    .where(eq(usersTable.id, req.user.id))
+    .returning();
+
+  res.json(updated);
 });
 
 router.get("/login", async (req: Request, res: Response) => {

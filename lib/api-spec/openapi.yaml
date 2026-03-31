@@ -152,6 +152,34 @@ paths:
               schema:
                 $ref: '#/components/schemas/LogoutSuccess'
 
+  /auth/user/profile:
+    patch:
+      operationId: updateProfile
+      tags: [Auth]
+      summary: Update current user's profile (name only)
+      parameters:
+        - $ref: '#/components/parameters/AuthorizationSessionHeader'
+        - $ref: '#/components/parameters/SessionCookie'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBody"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
   /challenges:
     get:
       operationId: listChallenges
@@ -723,6 +751,15 @@ components:
         slug:
           type: string
         message:
+          type: string
+
+    UpdateProfileBody:
+      type: object
+      required: [firstName, lastName]
+      properties:
+        firstName:
+          type: string
+        lastName:
           type: string
 
     LeaveChallengeResponse:
