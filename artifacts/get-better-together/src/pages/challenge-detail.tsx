@@ -77,6 +77,7 @@ export default function ChallengeDetail() {
   const viewDay = userProgress.days && viewIdx >= 0 ? userProgress.days[viewIdx] : null;
   const isViewingRestDay = viewDay != null && viewDay.target === 0;
   const isTodayRestDay = userProgress.todayTarget === 0;
+  const displayTarget = viewDay?.target ?? (challenge.dailyTargets ? challenge.dailyTargets[0] : userProgress.todayTarget);
 
   const formatDayDate = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00:00');
@@ -144,7 +145,7 @@ export default function ChallengeDetail() {
                         <>
                           <div className="text-6xl font-black tracking-tight">
                             {viewDay?.logged ?? 0}
-                            <span className="text-3xl text-muted-foreground font-semibold"> / {viewDay?.target ?? userProgress.todayTarget}</span>
+                            <span className="text-3xl text-muted-foreground font-semibold"> / {displayTarget}</span>
                           </div>
                           <div className="text-xl text-muted-foreground font-bold mt-2 uppercase tracking-wider">{challenge.unit}</div>
                         </>
