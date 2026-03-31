@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
+import { useLocation, useSearch } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
 import { useGetDashboardSummary, useListChallenges, useJoinChallenge, getGetDashboardSummaryQueryKey, getListChallengesQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
@@ -40,9 +40,18 @@ function Dashboard() {
   const { data: summary, isLoading: isSummaryLoading } = useGetDashboardSummary({ query: { queryKey: getGetDashboardSummaryQueryKey() } });
   const { data: challenges, isLoading: isChallengesLoading } = useListChallenges({ query: { queryKey: getListChallengesQueryKey() } });
   const [, setLocation] = useLocation();
+  const searchString = useSearch();
   const [inviteInput, setInviteInput] = useState("");
   const joinMutation = useJoinChallenge();
   const queryClient = useQueryClient();
+
+  const forceHome = new URLSearchParams(searchString).has("home");
+
+  useEffect(() => {
+    if (!forceHome && challenges && challenges.length === 1) {
+      setLocation(`/challenge/${challenges[0].slug}`);
+    }
+  }, [challenges, setLocation, forceHome]);
 
 
   const handleJoinByCode = () => {
