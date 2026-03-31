@@ -25,10 +25,10 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
            </div>
            <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-foreground">Get Better Together</h1>
            <p className="text-lg md:text-xl text-muted-foreground mb-10 leading-relaxed font-medium">
-             Hold your friends accountable. Track your habits. Focused, rewarding, and a little competitive.
+             Train together. Compete a little. Improve a lot.
            </p>
            <Button size="lg" className="w-full text-xl h-16 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all" onClick={onLogin}>
-             Sign in with Replit
+             Sign in to begin
            </Button>
         </div>
       </div>
