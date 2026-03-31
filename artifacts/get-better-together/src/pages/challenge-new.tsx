@@ -98,7 +98,7 @@ export default function ChallengeNew() {
                             <SelectValue placeholder="Select activity" />
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent className="rounded-xl">
+                        <SelectContent className="rounded-xl max-h-60 overflow-y-auto">
                           {ACTIVITY_TYPES.map(a => (
                             <SelectItem key={a} value={a} className="font-medium text-base">{formatActivityName(a)}</SelectItem>
                           ))}
