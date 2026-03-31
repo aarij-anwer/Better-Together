@@ -620,6 +620,14 @@ components:
         startDate:
           type: string
           format: date
+        randomizeReps:
+          type: boolean
+        restDayEnabled:
+          type: boolean
+        dailyTargets:
+          type: array
+          items:
+            type: integer
 
     Challenge:
       type: object
@@ -657,6 +665,15 @@ components:
           enum: [not_started, active, completed]
         participantCount:
           type: integer
+        dailyTargets:
+          type: array
+          items:
+            type: integer
+          nullable: true
+        randomizeReps:
+          type: boolean
+        restDayEnabled:
+          type: boolean
 
     ChallengeWithProgress:
       type: object
@@ -702,6 +719,15 @@ components:
           type: integer
         participantCount:
           type: integer
+        dailyTargets:
+          type: array
+          items:
+            type: integer
+          nullable: true
+        randomizeReps:
+          type: boolean
+        restDayEnabled:
+          type: boolean
 
     ChallengeDetail:
       type: object

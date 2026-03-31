@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useLocation } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -8,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ACTIVITY_TYPES, formatActivityName, getUnitForActivity, getDefaultTarget } from "@/lib/constants";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
@@ -27,6 +30,9 @@ const schema = z.object({
 export default function ChallengeNew() {
   const [, setLocation] = useLocation();
   const createChallenge = useCreateChallenge();
+  const [randomizeReps, setRandomizeReps] = useState(false);
+  const [restDayEnabled, setRestDayEnabled] = useState(false);
+  const [customizeOpen, setCustomizeOpen] = useState(false);
   
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
@@ -42,7 +48,12 @@ export default function ChallengeNew() {
   const targetValue = form.watch("targetValue");
   const durationDays = form.watch("durationDays");
   const unit = getUnitForActivity(activityType);
-  const totalTarget = (targetValue || 0) * (durationDays || 0);
+
+  const restDayCount = restDayEnabled ? Math.floor((durationDays || 0) / 7) : 0;
+  const activeDays = (durationDays || 0) - restDayCount;
+  const totalTarget = (targetValue || 0) * activeDays;
+
+  const showCustomize = (durationDays || 0) >= 10;
 
   const handleActivityChange = (value: string, onChange: (value: string) => void) => {
     onChange(value);
@@ -58,6 +69,8 @@ export default function ChallengeNew() {
         targetValue: data.targetValue,
         durationDays: data.durationDays,
         startDate: data.startDate ? data.startDate.toISOString().split('T')[0] : undefined,
+        randomizeReps: randomizeReps || undefined,
+        restDayEnabled: restDayEnabled || undefined,
       }
     }, {
       onSuccess: (challenge) => {
@@ -142,9 +155,12 @@ export default function ChallengeNew() {
 
                 {totalTarget > 0 && (
                   <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
-                    {/* <span className="text-sm font-semibold text-muted-foreground">Total: </span> */}
                     <span className="text-lg font-black text-primary">{totalTarget.toLocaleString()} {unit}</span>
-                    <span className="text-sm font-semibold text-muted-foreground"> over {durationDays} days</span>
+                    <span className="text-sm font-semibold text-muted-foreground">
+                      {restDayEnabled
+                        ? ` over ${activeDays} active days (${restDayCount} rest)`
+                        : ` over ${durationDays} days`}
+                    </span>
                   </div>
                 )}
                 
@@ -188,6 +204,44 @@ export default function ChallengeNew() {
                     </FormItem>
                   )}
                 />
+
+                {showCustomize && (
+                  <Collapsible open={customizeOpen} onOpenChange={setCustomizeOpen}>
+                    <CollapsibleTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex items-center justify-between w-full text-left py-3 px-4 rounded-xl border-2 hover:bg-muted/50 transition-colors"
+                      >
+                        <span className="text-base font-bold">Customize</span>
+                        <ChevronDown className={cn("h-5 w-5 transition-transform", customizeOpen && "rotate-180")} />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-4 space-y-4">
+                      <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl hover:bg-muted/50 transition-colors">
+                        <Checkbox
+                          checked={randomizeReps}
+                          onCheckedChange={(checked) => setRandomizeReps(checked === true)}
+                          className="mt-0.5"
+                        />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-bold">Randomize reps</span>
+                          <span className="text-xs text-muted-foreground">Randomizing reps makes it more challenging and prevents plateauing</span>
+                        </div>
+                      </label>
+                      <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl hover:bg-muted/50 transition-colors">
+                        <Checkbox
+                          checked={restDayEnabled}
+                          onCheckedChange={(checked) => setRestDayEnabled(checked === true)}
+                          className="mt-0.5"
+                        />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-bold">Rest day</span>
+                          <span className="text-xs text-muted-foreground">Each 7th day of the challenge is a rest day</span>
+                        </div>
+                      </label>
+                    </CollapsibleContent>
+                  </Collapsible>
+                )}
                 
                 <Button type="submit" size="lg" className="w-full h-16 text-xl font-black rounded-2xl mt-6 shadow-lg" disabled={createChallenge.isPending}>
                   {createChallenge.isPending ? "Creating..." : "Create Challenge"}

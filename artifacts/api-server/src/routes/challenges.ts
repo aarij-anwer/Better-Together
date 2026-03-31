@@ -15,6 +15,7 @@ import {
   computeStreak,
 } from "../lib/challengeUtils";
 import { computeChallengeProgress, getCurrentDay } from "../lib/utils";
+import { generateDailyTargets } from "@workspace/shared";
 
 const router: IRouter = Router();
 
@@ -93,6 +94,7 @@ router.get("/challenges", async (req, res): Promise<void> => {
         durationDays: challenge.durationDays,
         targetValue: challenge.targetValue,
         type: challenge.type as "daily" | "total",
+        dailyTargets: challenge.dailyTargets as number[] | null,
       });
 
       const participantCount = await db
@@ -110,6 +112,9 @@ router.get("/challenges", async (req, res): Promise<void> => {
         todayTarget: progress.todayTarget,
         currentDay: getCurrentDay(challenge.startDate, challenge.durationDays),
         participantCount: participantCount[0]?.count ?? 0,
+        dailyTargets: challenge.dailyTargets,
+        randomizeReps: challenge.randomizeReps,
+        restDayEnabled: challenge.restDayEnabled,
       };
     })
   );
@@ -129,8 +134,21 @@ router.post("/challenges", async (req, res): Promise<void> => {
     return;
   }
 
-  const { title, activityType, type, targetValue, durationDays, startDate } = parsed.data;
+  const { title, activityType, type, targetValue, durationDays, startDate, randomizeReps, restDayEnabled, dailyTargets: providedDailyTargets } = parsed.data;
   const unit = getUnitForActivity(activityType);
+
+  const shouldRandomize = randomizeReps ?? false;
+  const shouldRestDay = restDayEnabled ?? false;
+  let resolvedDailyTargets: number[] | null = providedDailyTargets ?? null;
+
+  if (!resolvedDailyTargets && (shouldRandomize || shouldRestDay)) {
+    resolvedDailyTargets = generateDailyTargets({
+      baseTarget: targetValue,
+      durationDays,
+      restDayEnabled: shouldRestDay,
+      randomizeReps: shouldRandomize,
+    });
+  }
 
   let inviteCode = generateInviteCode();
   let retries = 0;
@@ -172,6 +190,9 @@ router.post("/challenges", async (req, res): Promise<void> => {
       startDate: startOfDay,
       createdById: req.user.id,
       inviteCode,
+      dailyTargets: resolvedDailyTargets,
+      randomizeReps: shouldRandomize,
+      restDayEnabled: shouldRestDay,
     })
     .returning();
 
@@ -336,6 +357,7 @@ router.get("/challenges/:id", async (req, res): Promise<void> => {
     durationDays: challenge.durationDays,
     targetValue: challenge.targetValue,
     type: challenge.type as "daily" | "total",
+    dailyTargets: challenge.dailyTargets as number[] | null,
   });
 
   let streak = 0;
@@ -352,6 +374,9 @@ router.get("/challenges/:id", async (req, res): Promise<void> => {
       createdAt: challenge.createdAt.toISOString(),
       state,
       participantCount: participantCount[0]?.count ?? 0,
+      dailyTargets: challenge.dailyTargets,
+      randomizeReps: challenge.randomizeReps,
+      restDayEnabled: challenge.restDayEnabled,
     },
     userProgress: {
       totalLogged: progress.totalLogged,
@@ -406,6 +431,17 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
 
   let valueToLog = parsed.data.value;
 
+  const challengeDailyTargets = challenge.dailyTargets as number[] | null;
+
+  if (challengeDailyTargets) {
+    const currentDay = getCurrentDay(challenge.startDate, challenge.durationDays);
+    const todayTarget = challengeDailyTargets[currentDay - 1] ?? 0;
+    if (todayTarget === 0) {
+      res.status(400).json({ error: "Today is a rest day — no progress can be logged" });
+      return;
+    }
+  }
+
   const existingLogs = await db
     .select()
     .from(progressLogsTable)
@@ -417,8 +453,10 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
     );
 
   if (challenge.type === "daily") {
-    const maxTotal = challenge.targetValue * challenge.durationDays;
-    const allocatedTotal = computeAllocatedTotal(existingLogs, challenge.startDate, challenge.durationDays, challenge.targetValue);
+    const maxTotal = challengeDailyTargets
+      ? challengeDailyTargets.reduce((sum, t) => sum + t, 0)
+      : challenge.targetValue * challenge.durationDays;
+    const allocatedTotal = computeAllocatedTotal(existingLogs, challenge.startDate, challenge.durationDays, challenge.targetValue, challengeDailyTargets);
     const remaining = maxTotal - allocatedTotal;
     if (remaining <= 0) {
       res.status(400).json({ error: "Challenge fully completed, no more progress can be logged" });
@@ -443,6 +481,7 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
     durationDays: challenge.durationDays,
     targetValue: challenge.targetValue,
     type: challenge.type as "daily" | "total",
+    dailyTargets: challengeDailyTargets,
   });
 
   res.json({
@@ -489,6 +528,7 @@ router.get("/challenges/:id/progress", async (req, res): Promise<void> => {
     durationDays: challenge.durationDays,
     targetValue: challenge.targetValue,
     type: challenge.type as "daily" | "total",
+    dailyTargets: challenge.dailyTargets as number[] | null,
   });
 
   let streak = 0;
@@ -577,6 +617,7 @@ async function buildLeaderboard(challenge: typeof challengesTable.$inferSelect) 
         durationDays: challenge.durationDays,
         targetValue: challenge.targetValue,
         type: challenge.type as "daily" | "total",
+        dailyTargets: challenge.dailyTargets as number[] | null,
       });
 
       let streak = 0;

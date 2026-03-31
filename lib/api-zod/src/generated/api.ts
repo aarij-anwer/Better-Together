@@ -151,6 +151,9 @@ export const ListChallengesResponseItem = zod.object({
   todayTarget: zod.number(),
   currentDay: zod.number(),
   participantCount: zod.number(),
+  dailyTargets: zod.array(zod.number()).nullish(),
+  randomizeReps: zod.boolean().optional(),
+  restDayEnabled: zod.boolean().optional(),
 });
 export const ListChallengesResponse = zod.array(ListChallengesResponseItem);
 
@@ -190,6 +193,9 @@ export const CreateChallengeBody = zod.object({
   targetValue: zod.number().min(1),
   durationDays: zod.number().min(1).max(createChallengeBodyDurationDaysMax),
   startDate: zod.coerce.date().optional(),
+  randomizeReps: zod.boolean().optional(),
+  restDayEnabled: zod.boolean().optional(),
+  dailyTargets: zod.array(zod.number()).optional(),
 });
 
 /**
@@ -222,6 +228,9 @@ export const GetChallengeResponse = zod.object({
     createdAt: zod.coerce.date(),
     state: zod.enum(["not_started", "active", "completed"]),
     participantCount: zod.number().optional(),
+    dailyTargets: zod.array(zod.number()).nullish(),
+    randomizeReps: zod.boolean().optional(),
+    restDayEnabled: zod.boolean().optional(),
   }),
   userProgress: zod.object({
     totalLogged: zod.number(),

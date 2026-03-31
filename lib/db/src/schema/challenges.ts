@@ -1,4 +1,4 @@
-import { pgTable, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, integer, timestamp, boolean, jsonb } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { usersTable } from "./auth";
@@ -16,6 +16,9 @@ export const challengesTable = pgTable("challenges", {
   createdById: text("created_by_id").notNull().references(() => usersTable.id),
   inviteCode: text("invite_code").notNull().unique(),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  dailyTargets: jsonb("daily_targets").$type<number[]>(),
+  randomizeReps: boolean("randomize_reps").notNull().default(false),
+  restDayEnabled: boolean("rest_day_enabled").notNull().default(false),
 });
 
 export const insertChallengeSchema = createInsertSchema(challengesTable).omit({ id: true, createdAt: true });

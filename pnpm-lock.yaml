@@ -172,6 +172,9 @@ importers:
       '@workspace/db':
         specifier: workspace:*
         version: link:../../lib/db
+      '@workspace/shared':
+        specifier: workspace:*
+        version: link:../../lib/shared
       cookie-parser:
         specifier: ^1.4.7
         version: 1.4.7
@@ -341,6 +344,9 @@ importers:
       '@workspace/replit-auth-web':
         specifier: workspace:*
         version: link:../../lib/replit-auth-web
+      '@workspace/shared':
+        specifier: workspace:*
+        version: link:../../lib/shared
       class-variance-authority:
         specifier: 'catalog:'
         version: 0.7.1
@@ -649,6 +655,8 @@ importers:
       '@types/react':
         specifier: 'catalog:'
         version: 19.2.14
+
+  lib/shared: {}
 
   scripts:
     devDependencies:

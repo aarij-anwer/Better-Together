@@ -31,6 +31,7 @@ artifacts-monorepo/
 │   ├── api-client-react/   # Generated React Query hooks
 │   ├── api-zod/            # Generated Zod schemas from OpenAPI
 │   ├── db/                 # Drizzle ORM schema + DB connection
+│   ├── shared/             # Shared utilities (generateDailyTargets)
 │   └── replit-auth-web/    # Browser auth hook (useAuth)
 ├── scripts/                # Utility scripts (single workspace package)
 │   └── src/                # Individual .ts scripts
@@ -46,6 +47,7 @@ Social fitness challenge app where users create private, time-bound challenges, 
 
 ### Features
 - **Challenge types**: Daily (per-day targets with backlog filling) and Total (accumulate toward overall goal)
+- **Customization**: Randomize reps (wave pattern with ±10% noise) and Rest days (every 7th day) via Customize accordion on creation form (duration ≥ 10 days). Per-day targets stored as jsonb `daily_targets` column.
 - **Invite system**: 8-character invite codes to join challenges
 - **Progress tracking**: Quick-add buttons, progress rings (daily), progress bars (total)
 - **Leaderboards**: Ranked by total logged, with streak tracking for daily challenges
@@ -74,7 +76,7 @@ Social fitness challenge app where users create private, time-bound challenges, 
 
 ### Key Business Logic (api-server/src/lib/challengeUtils.ts)
 - Challenge state derived from dates (never stored): not_started, active, completed
-- Daily progress: aggregates logs by actual calendar date, overflow from today spills to unfilled days
+- Daily progress: aggregates logs by actual calendar date, overflow from today spills to unfilled days. When `dailyTargets` array exists, each day uses its own target. Rest days (target=0) are skipped during backfill and auto-completed for streaks. Logging on rest days is rejected.
 - Streak computation: consecutive completed days ending at today (or yesterday if today incomplete)
 - Unit auto-derived from activity type (pushups→reps, running→km, etc.)
 

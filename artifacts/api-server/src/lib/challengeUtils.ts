@@ -72,7 +72,8 @@ export function computeDailyProgress(
   logs: Array<{ date: Date; value: number }>,
   startDate: Date,
   durationDays: number,
-  targetValue: number
+  targetValue: number,
+  dailyTargets?: number[] | null
 ): DayProgressItem[] {
   const start = startOfDay(startDate);
 
@@ -80,11 +81,12 @@ export function computeDailyProgress(
   for (let i = 0; i < durationDays; i++) {
     const d = new Date(start);
     d.setDate(d.getDate() + i);
+    const dayTarget = dailyTargets ? dailyTargets[i] : targetValue;
     days.push({
       date: toDateString(d),
       logged: 0,
-      target: targetValue,
-      completed: false,
+      target: dayTarget,
+      completed: dayTarget === 0,
     });
   }
 
@@ -100,8 +102,9 @@ export function computeDailyProgress(
     const logDate = toDateString(log.date);
     const primaryIdx = dayMap.get(logDate);
 
-    if (primaryIdx !== undefined) {
-      const canFill = Math.max(0, targetValue - days[primaryIdx].logged);
+    if (primaryIdx !== undefined && days[primaryIdx].target > 0) {
+      const dayCap = days[primaryIdx].target;
+      const canFill = Math.max(0, dayCap - days[primaryIdx].logged);
       const fill = Math.min(remaining, canFill);
       days[primaryIdx].logged += fill;
       remaining -= fill;
@@ -111,7 +114,9 @@ export function computeDailyProgress(
       const logDayBound = logDate;
       for (let i = 0; i < durationDays; i++) {
         if (days[i].date > logDayBound) break;
-        const canFill = Math.max(0, targetValue - days[i].logged);
+        if (days[i].target === 0) continue;
+        const dayCap = days[i].target;
+        const canFill = Math.max(0, dayCap - days[i].logged);
         if (canFill > 0) {
           const fill = Math.min(remaining, canFill);
           days[i].logged += fill;
@@ -123,7 +128,7 @@ export function computeDailyProgress(
   }
 
   for (const day of days) {
-    day.logged = Math.min(day.logged, targetValue);
+    day.logged = Math.min(day.logged, day.target);
     day.completed = day.logged >= day.target;
   }
 
@@ -134,9 +139,10 @@ export function computeAllocatedTotal(
   logs: Array<{ date: Date; value: number }>,
   startDate: Date,
   durationDays: number,
-  targetValue: number
+  targetValue: number,
+  dailyTargets?: number[] | null
 ): number {
-  const days = computeDailyProgress(logs, startDate, durationDays, targetValue);
+  const days = computeDailyProgress(logs, startDate, durationDays, targetValue, dailyTargets);
   return days.reduce((sum, d) => sum + d.logged, 0);
 }
 

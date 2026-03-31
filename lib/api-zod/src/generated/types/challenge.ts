@@ -23,4 +23,7 @@ export interface Challenge {
   createdAt: Date;
   state: ChallengeState;
   participantCount?: number;
+  dailyTargets?: number[] | null;
+  randomizeReps?: boolean;
+  restDayEnabled?: boolean;
 }

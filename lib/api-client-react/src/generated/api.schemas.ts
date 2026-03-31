@@ -95,6 +95,9 @@ export interface CreateChallengeBody {
    */
   durationDays: number;
   startDate?: string;
+  randomizeReps?: boolean;
+  restDayEnabled?: boolean;
+  dailyTargets?: number[];
 }
 
 export type ChallengeType = (typeof ChallengeType)[keyof typeof ChallengeType];
@@ -128,6 +131,9 @@ export interface Challenge {
   createdAt: string;
   state: ChallengeState;
   participantCount?: number;
+  dailyTargets?: number[] | null;
+  randomizeReps?: boolean;
+  restDayEnabled?: boolean;
 }
 
 export type ChallengeWithProgressType =
@@ -166,6 +172,9 @@ export interface ChallengeWithProgress {
   todayTarget: number;
   currentDay: number;
   participantCount: number;
+  dailyTargets?: number[] | null;
+  randomizeReps?: boolean;
+  restDayEnabled?: boolean;
 }
 
 export interface DayProgress {

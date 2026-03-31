@@ -27,4 +27,7 @@ export interface ChallengeWithProgress {
   todayTarget: number;
   currentDay: number;
   participantCount: number;
+  dailyTargets?: number[] | null;
+  randomizeReps?: boolean;
+  restDayEnabled?: boolean;
 }
