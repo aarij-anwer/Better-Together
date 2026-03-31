@@ -12,9 +12,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-[100dvh] flex flex-col bg-background">
       <header className="h-16 border-b bg-card/50 backdrop-blur-xl sticky top-0 z-50">
         <div className="max-w-4xl mx-auto px-6 md:px-8 h-full flex items-center justify-between">
-          <Link href="/?home=1" className="font-bold text-sm sm:text-xl tracking-tight flex items-center gap-2 text-primary hover:opacity-80 transition-opacity">
-            <div className="w-7 h-7 sm:w-8 sm:h-8 bg-primary rounded-xl flex items-center justify-center shadow-sm shrink-0">
-              <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
+          <Link href="/?home=1" className="font-bold text-xl tracking-tight flex items-center gap-2 text-primary hover:opacity-80 transition-opacity">
+            <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center shadow-sm">
+              <Activity className="w-5 h-5 text-primary-foreground" />
             </div>
             Get Better Together
           </Link>
