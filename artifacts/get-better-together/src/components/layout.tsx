@@ -20,10 +20,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </Link>
           
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setLocation('/?home=1')}>
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => setLocation('/?home=1')}>
               <Home className="w-5 h-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="rounded-full" onClick={() => setLocation('/challenge/new')}>
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => setLocation('/challenge/new')}>
               <Plus className="w-5 h-5" />
             </Button>
             
