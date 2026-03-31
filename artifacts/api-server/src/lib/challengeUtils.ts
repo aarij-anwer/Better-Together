@@ -127,20 +127,23 @@ export function computeAllocatedTotal(
 }
 
 export function computeStreak(days: DayProgressItem[], startDate: Date): number {
-  const today = toDateString(new Date());
   const start = startOfDay(startDate);
   const todayDate = startOfDay(new Date());
   const todayIdx = Math.floor((todayDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 
-  let streak = 0;
   let checkIdx = todayIdx;
 
-  if (checkIdx < 0 || checkIdx >= days.length) return 0;
+  if (checkIdx < 0) return 0;
+
+  if (checkIdx >= days.length) {
+    checkIdx = days.length - 1;
+  }
 
   if (!days[checkIdx].completed) {
     checkIdx--;
   }
 
+  let streak = 0;
   while (checkIdx >= 0 && days[checkIdx].completed) {
     streak++;
     checkIdx--;
