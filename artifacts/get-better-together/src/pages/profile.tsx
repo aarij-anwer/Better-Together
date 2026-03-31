@@ -22,8 +22,14 @@ export default function Profile() {
   const [, setLocation] = useLocation();
   const [confirmLeaveId, setConfirmLeaveId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState(false);
-  const [firstName, setFirstName] = useState(user?.firstName || "");
-  const [lastName, setLastName] = useState(user?.lastName || "");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+
+  const startEditing = () => {
+    setFirstName(user?.firstName || "");
+    setLastName(user?.lastName || "");
+    setEditingName(true);
+  };
 
   const handleLeave = (slugOrId: string) => {
     leaveMutation.mutate(
@@ -116,7 +122,7 @@ export default function Profile() {
               ) : (
                 <div className="flex items-center gap-2">
                   <h1 className="text-2xl font-black tracking-tight truncate">{displayName}</h1>
-                  <Button size="sm" variant="ghost" className="rounded-lg h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary" onClick={() => setEditingName(true)}>
+                  <Button size="sm" variant="ghost" className="rounded-lg h-8 w-8 p-0 hover:bg-primary/10 hover:text-primary" onClick={startEditing}>
                     <Pencil className="w-3.5 h-3.5" />
                   </Button>
                 </div>
