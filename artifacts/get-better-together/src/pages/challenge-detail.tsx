@@ -3,9 +3,10 @@ import { useGetChallenge, useLogProgress, getGetChallengeQueryKey, getGetProgres
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Activity, Trophy, Clock, Users, ArrowRight, Share, CheckCircle2, Flame } from "lucide-react";
+import { Activity, Trophy, Clock, Users, ArrowRight, Share, CheckCircle2, Flame, CalendarDays } from "lucide-react";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { formatActivityName } from "@/lib/constants";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -21,6 +22,7 @@ export default function ChallengeDetail() {
   const logMutation = useLogProgress();
   const [customVal, setCustomVal] = useState("");
   const [selectedDayIdx, setSelectedDayIdx] = useState<number | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   
   const { data, isLoading } = useGetChallenge(id as string, { query: { enabled: !!id, queryKey: getGetChallengeQueryKey(id as string) } });
   
@@ -200,7 +202,14 @@ export default function ChallengeDetail() {
 
               {challenge.type === 'daily' && userProgress.days && (
                 <Card className="p-6 rounded-[2rem] border shadow-sm">
-                  <h3 className="font-bold text-lg mb-6 uppercase tracking-wider text-muted-foreground">Day Progress</h3>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 className="font-bold text-lg uppercase tracking-wider text-muted-foreground">Day Progress</h3>
+                    {challenge.dailyTargets && challenge.dailyTargets.length > 0 && (
+                      <Button variant="ghost" size="sm" onClick={() => setScheduleOpen(true)} className="text-primary hover:text-primary/80 font-bold px-2 rounded-lg">
+                        <CalendarDays className="w-4 h-4 mr-1" /> View Schedule
+                      </Button>
+                    )}
+                  </div>
                   <div className="overflow-x-auto pb-2">
                     <div className="flex gap-1 p-1" style={{ width: 'max-content' }}>
                       {userProgress.days.map((day, idx) => {
@@ -266,6 +275,79 @@ export default function ChallengeDetail() {
            </div>
         </div>
       </div>
+
+      {challenge.dailyTargets && challenge.dailyTargets.length > 0 && (
+        <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+          <DialogContent className="max-w-md rounded-2xl max-h-[85vh] flex flex-col p-0">
+            <DialogHeader className="px-6 pt-6 pb-2">
+              <DialogTitle className="text-xl font-black tracking-tight">{challenge.title} Schedule</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground">
+                Day-by-day breakdown of targets for this challenge
+              </DialogDescription>
+            </DialogHeader>
+            <ul className="flex-1 overflow-y-auto px-6 pb-2 space-y-2" role="list">
+              {challenge.dailyTargets.map((target, idx) => {
+                const progressDay = userProgress.days?.[idx];
+                let dayDate: Date;
+                let dateStr: string;
+                if (progressDay?.date) {
+                  dateStr = progressDay.date;
+                  dayDate = new Date(progressDay.date + 'T00:00:00');
+                } else {
+                  const startParts = challenge.startDate.slice(0, 10);
+                  dayDate = new Date(startParts + 'T00:00:00');
+                  dayDate.setDate(dayDate.getDate() + idx);
+                  dateStr = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
+                }
+                const isToday = dateStr === todayStr;
+                const isRest = target === 0;
+                const isPast = dateStr < todayStr;
+                const isCompleted = progressDay?.completed === true;
+
+                return (
+                  <li
+                    key={idx}
+                    className={`flex items-center gap-3 p-3 rounded-xl transition-all list-none
+                      ${isToday ? 'ring-2 ring-primary bg-primary/5' : ''}
+                      ${isRest ? 'bg-muted/50' : 'bg-secondary/30'}
+                    `}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-black shrink-0
+                      ${isRest ? 'bg-muted text-muted-foreground' : isCompleted ? 'bg-green-100 text-green-600' : isToday ? 'bg-primary text-primary-foreground' : 'bg-secondary text-muted-foreground'}
+                    `}>
+                      {isCompleted && !isRest ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className={`font-bold text-sm ${isToday ? 'text-primary' : ''}`}>Day {idx + 1}</span>
+                        {isToday && <span className="text-[10px] font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded-md uppercase">Today</span>}
+                      </div>
+                      <span className="text-xs text-muted-foreground font-medium">
+                        {dayDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {isRest ? (
+                        <span className="text-xs font-bold text-muted-foreground bg-muted px-2 py-1 rounded-md">Rest Day</span>
+                      ) : (
+                        <span className={`text-sm font-black ${isCompleted ? 'text-green-600' : isPast && !isCompleted ? 'text-red-400' : ''}`}>
+                          {target} {challenge.unit}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            <DialogFooter className="px-6 py-4 border-t bg-secondary/20">
+              <div className="w-full flex justify-between text-sm font-bold text-muted-foreground">
+                <span>{challenge.dailyTargets.filter(t => t > 0).length} active days</span>
+                <span>{challenge.dailyTargets.reduce((sum, t) => sum + t, 0)} total {challenge.unit}</span>
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </Layout>
   )
 }
