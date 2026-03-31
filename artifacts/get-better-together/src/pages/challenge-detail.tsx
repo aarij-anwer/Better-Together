@@ -44,6 +44,11 @@ export default function ChallengeDetail() {
 
   const handleLog = (value: number) => {
     if (challenge.state === 'not_started') return;
+    const previousTotal = userProgress.totalLogged;
+    const target = userProgress.totalTarget;
+    const alreadyCompleted = target > 0 && previousTotal >= target;
+    const willComplete = target > 0 && !alreadyCompleted && previousTotal + value >= target;
+
     logMutation.mutate(
       { id: challenge.slug || challenge.id, data: { value } },
       {
@@ -52,7 +57,23 @@ export default function ChallengeDetail() {
           queryClient.invalidateQueries({ queryKey: getGetProgressQueryKey(challenge.slug || challenge.id) });
           queryClient.invalidateQueries({ queryKey: getListChallengesQueryKey() });
           queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
-          toast.success(`Logged ${value} ${challenge.unit}`);
+          if (alreadyCompleted) {
+            toast.info("You've already completed this challenge! Extra reps won't count toward the total.");
+          } else if (willComplete) {
+            toast.success("Challenge target reached! Amazing work! 🎉");
+          } else {
+            toast.success(`Logged ${value} ${challenge.unit}`);
+          }
+          setCustomVal("");
+        },
+        onError: (error: unknown) => {
+          const apiError = error as { data?: { error?: string }; message?: string } | undefined;
+          const message = apiError?.data?.error || apiError?.message || "";
+          if (message.includes("fully completed")) {
+            toast.info("You've already completed this challenge! Extra reps won't count toward the total.");
+          } else {
+            toast.error(message || "Failed to log activity");
+          }
           setCustomVal("");
         }
       }
