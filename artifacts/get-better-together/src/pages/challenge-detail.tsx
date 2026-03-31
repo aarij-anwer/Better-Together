@@ -85,7 +85,7 @@ export default function ChallengeDetail() {
 
   return (
     <Layout>
-      <div className="max-w-4xl mx-auto w-full px-6 md:px-8 py-8">
+      <div className="max-w-4xl mx-auto w-full px-6 md:px-8 py-8 overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-2">
@@ -117,9 +117,9 @@ export default function ChallengeDetail() {
            </div>
         )}
 
-        <div className="grid md:grid-cols-[1fr_340px] gap-6">
-           <div className="space-y-6">
-              <Card className="p-6 md:p-10 rounded-[2rem] border shadow-sm flex flex-col items-center">
+        <div className="grid md:grid-cols-[1fr_340px] gap-6 min-w-0">
+           <div className="space-y-6 min-w-0">
+              <Card className="p-6 md:p-10 rounded-[2rem] border shadow-sm flex flex-col items-center overflow-hidden">
                 {challenge.type === 'daily' ? (
                   <>
                     <h3 className="font-bold text-lg text-muted-foreground uppercase tracking-widest mb-8">
@@ -187,7 +187,7 @@ export default function ChallengeDetail() {
               </Card>
 
               {challenge.type === 'daily' && userProgress.days && (
-                <Card className="p-6 rounded-[2rem] border shadow-sm">
+                <Card className="p-6 rounded-[2rem] border shadow-sm overflow-hidden">
                   <h3 className="font-bold text-lg mb-6 uppercase tracking-wider text-muted-foreground">Day Progress</h3>
                   <div className="overflow-x-auto -mx-2 px-2 pb-2">
                     <div className="flex gap-1" style={{ width: 'max-content' }}>
