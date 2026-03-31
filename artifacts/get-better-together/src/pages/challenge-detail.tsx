@@ -67,12 +67,15 @@ export default function ChallengeDetail() {
           setCustomVal("");
         },
         onError: (error: unknown) => {
-          const apiError = error as { data?: { error?: string }; message?: string } | undefined;
-          const message = apiError?.data?.error || apiError?.message || "";
-          if (message.includes("fully completed")) {
+          const err = error as { data?: { error?: string } | null; message?: string } | undefined;
+          const serverMsg = (err?.data && typeof err.data === 'object' && 'error' in err.data) ? err.data.error : '';
+          const errorMsg = serverMsg || err?.message || "";
+          if (errorMsg.includes("fully completed")) {
             toast.info("You've already completed this challenge! Extra reps won't count toward the total.");
+          } else if (errorMsg.includes("rest day")) {
+            toast.info("Today is a rest day — no logging needed!");
           } else {
-            toast.error(message || "Failed to log activity");
+            toast.error(errorMsg || "Failed to log activity");
           }
           setCustomVal("");
         }
