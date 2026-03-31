@@ -39,7 +39,10 @@ export default function ChallengeNew() {
   });
 
   const activityType = form.watch("activityType");
+  const targetValue = form.watch("targetValue");
+  const durationDays = form.watch("durationDays");
   const unit = getUnitForActivity(activityType);
+  const totalTarget = (targetValue || 0) * (durationDays || 0);
 
   const handleActivityChange = (value: string, onChange: (value: string) => void) => {
     onChange(value);
@@ -109,35 +112,41 @@ export default function ChallengeNew() {
                   )}
                 />
                 
-                <div className="grid grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="targetValue"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-bold">Target per day ({unit})</FormLabel>
-                        <FormControl>
-                          <Input type="number" className="h-14 rounded-xl border-2 font-bold text-lg" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="durationDays"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-base font-bold">Duration (days)</FormLabel>
-                        <FormControl>
-                          <Input type="number" className="h-14 rounded-xl border-2 font-bold text-lg" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="targetValue"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-bold">Target per day ({unit})</FormLabel>
+                      <FormControl>
+                        <Input type="number" className="h-14 rounded-xl border-2 font-bold text-lg" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="durationDays"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-base font-bold">Duration (days)</FormLabel>
+                      <FormControl>
+                        <Input type="number" className="h-14 rounded-xl border-2 font-bold text-lg" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {totalTarget > 0 && (
+                  <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
+                    <span className="text-sm font-semibold text-muted-foreground">Total: </span>
+                    <span className="text-lg font-black text-primary">{totalTarget.toLocaleString()} {unit}</span>
+                    <span className="text-sm font-semibold text-muted-foreground"> over {durationDays} days</span>
+                  </div>
+                )}
                 
                 <FormField
                   control={form.control}
