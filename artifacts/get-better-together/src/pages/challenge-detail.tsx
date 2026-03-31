@@ -187,10 +187,10 @@ export default function ChallengeDetail() {
               </Card>
 
               {challenge.type === 'daily' && userProgress.days && (
-                <Card className="p-6 rounded-[2rem] border shadow-sm overflow-hidden">
+                <Card className="p-6 rounded-[2rem] border shadow-sm">
                   <h3 className="font-bold text-lg mb-6 uppercase tracking-wider text-muted-foreground">Day Progress</h3>
-                  <div className="overflow-x-auto -mx-2 px-2 pb-2">
-                    <div className="flex gap-1" style={{ width: 'max-content' }}>
+                  <div className="overflow-x-auto pb-2">
+                    <div className="flex gap-1 p-1" style={{ width: 'max-content' }}>
                       {userProgress.days.map((day, idx) => {
                         const isToday = day.date === todayStr;
                         const isSelected = idx === viewIdx;
