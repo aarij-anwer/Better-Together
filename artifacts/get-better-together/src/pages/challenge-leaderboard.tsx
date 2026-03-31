@@ -57,7 +57,7 @@ export default function ChallengeLeaderboard() {
            {leaderboard.map((entry, idx) => (
              <Card key={entry.userId} className={`p-5 rounded-2xl flex items-center gap-4 border shadow-sm transition-all hover:shadow-md ${idx === 0 ? 'bg-gradient-to-r from-yellow-50 to-transparent border-yellow-200' : idx === 1 ? 'bg-gradient-to-r from-gray-50 to-transparent border-gray-200' : idx === 2 ? 'bg-gradient-to-r from-amber-50 to-transparent border-amber-200' : 'bg-card'}`}>
                <div className={`w-8 text-center font-black text-2xl ${idx === 0 ? 'text-yellow-500' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-amber-700' : 'text-muted-foreground'}`}>
-                 {entry.rank}
+                 {entry.rank || '-'}
                </div>
                
                <Avatar className="w-14 h-14 border-4 border-background shadow-md">
