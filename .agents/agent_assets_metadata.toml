@@ -1,8 +1,19 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "dYtKl3dlM1Lyl5hKdebzE"
 uri = "file://artifacts/get-better-together/public/hero-bg.png"
 type = "image"
 title = "Clean abstract runners"
+
+[[generated]]
+id = "WmgMWLcNbae89zs_VvIy2"
+uri = "file://artifacts/get-better-together/public/project-image.png"
+type = "image"
+title = "fitness app clean icon"
+
+[[outputs]]
+id = "k-nEfjkCDn6z8ao8mfiPf"
+uri = "file://artifacts/get-better-together/public/project-image.png"
+type = "image"
+title = "Get Better Together - Project Image"
