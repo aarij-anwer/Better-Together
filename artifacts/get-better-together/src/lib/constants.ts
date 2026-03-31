@@ -1,7 +1,7 @@
 export const ACTIVITY_TYPES = [
   "pushups", "situps", "squats", "pullups", "burpees", "running", 
   "walking", "cycling", "swimming", "steps", "meditation", "reading", 
-  "water", "custom"
+  "water"
 ] as const;
 
 export function getUnitForActivity(activity: string): string {
