@@ -70,7 +70,7 @@ export default function ChallengeNew() {
   return (
     <Layout>
       <div className="max-w-xl mx-auto w-full px-6 md:px-8 py-10">
-         <h1 className="text-4xl font-black tracking-tight mb-8">Create Challenge</h1>
+         <h1 className="text-4xl font-black tracking-tight mb-8">Create a challenge</h1>
          
          <div className="bg-card p-6 md:p-10 rounded-[2rem] border shadow-sm">
            <Form {...form}>
@@ -80,7 +80,7 @@ export default function ChallengeNew() {
                   name="title"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-base font-bold">Challenge Title</FormLabel>
+                      <FormLabel className="text-base font-bold">Challenge title</FormLabel>
                       <FormControl>
                         <Input placeholder="e.g. Summer Shred, 10k Steps" className="h-14 text-lg rounded-xl border-2 font-medium" {...field} />
                       </FormControl>
@@ -142,7 +142,7 @@ export default function ChallengeNew() {
 
                 {totalTarget > 0 && (
                   <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 text-center">
-                    <span className="text-sm font-semibold text-muted-foreground">Total: </span>
+                    {/* <span className="text-sm font-semibold text-muted-foreground">Total: </span> */}
                     <span className="text-lg font-black text-primary">{totalTarget.toLocaleString()} {unit}</span>
                     <span className="text-sm font-semibold text-muted-foreground"> over {durationDays} days</span>
                   </div>
@@ -153,7 +153,7 @@ export default function ChallengeNew() {
                   name="startDate"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel className="text-base font-bold">Start Date (Optional)</FormLabel>
+                      <FormLabel className="text-base font-bold">Start date (optional)</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
@@ -167,7 +167,7 @@ export default function ChallengeNew() {
                               {field.value ? (
                                 format(field.value, "PPP")
                               ) : (
-                                <span>Starts Today</span>
+                                <span>Starts today</span>
                               )}
                               <CalendarIcon className="ml-auto h-5 w-5 opacity-50" />
                             </Button>

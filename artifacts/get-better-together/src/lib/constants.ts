@@ -1,14 +1,32 @@
 export const ACTIVITY_TYPES = [
-  "pushups", "situps", "squats", "pullups", "burpees", "running", 
-  "walking", "cycling", "swimming", "steps", "meditation", "reading", 
-  "water"
+  "pushups",
+  "situps",
+  "squats",
+  "pullups",
+  "burpees",
+  "running",
+  "walking",
+  "cycling",
+  "swimming",
+  "steps",
+  "meditation",
+  "reading",
 ] as const;
 
 export function getUnitForActivity(activity: string): string {
   const map: Record<string, string> = {
-    pushups: "reps", situps: "reps", squats: "reps", pullups: "reps", burpees: "reps",
-    running: "km", walking: "km", cycling: "km", swimming: "m",
-    steps: "steps", meditation: "mins", reading: "pages", water: "ml"
+    pushups: "reps",
+    situps: "reps",
+    squats: "reps",
+    pullups: "reps",
+    burpees: "reps",
+    running: "km",
+    walking: "km",
+    cycling: "km",
+    swimming: "m",
+    steps: "steps",
+    meditation: "mins",
+    reading: "pages",
   };
   return map[activity] || "units";
 }
@@ -27,7 +45,6 @@ export function getDefaultTarget(activity: string): number {
     steps: 10000,
     meditation: 15,
     reading: 20,
-    water: 2000,
     custom: 10,
   };
   return map[activity] || 10;
