@@ -55,7 +55,6 @@ export default function Profile() {
         onSuccess: () => {
           toast.success("Name updated");
           setEditingName(false);
-          queryClient.invalidateQueries({ queryKey: ["getCurrentAuthUser"] });
           window.location.reload();
         },
         onError: () => {

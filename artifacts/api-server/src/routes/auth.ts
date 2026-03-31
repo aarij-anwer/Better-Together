@@ -12,6 +12,8 @@ import {
   clearSession,
   getOidcConfig,
   getSessionId,
+  getSession,
+  updateSession,
   createSession,
   deleteSession,
   SESSION_COOKIE,
@@ -108,6 +110,16 @@ router.patch("/auth/user/profile", async (req: Request, res: Response): Promise<
     .set({ firstName: firstName.trim(), lastName: lastName.trim() })
     .where(eq(usersTable.id, req.user.id))
     .returning();
+
+  const sid = getSessionId(req);
+  if (sid) {
+    const session = await getSession(sid);
+    if (session?.user) {
+      session.user.firstName = updated.firstName;
+      session.user.lastName = updated.lastName;
+      await updateSession(sid, session);
+    }
+  }
 
   res.json(updated);
 });
