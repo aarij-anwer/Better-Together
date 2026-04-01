@@ -132,7 +132,13 @@ export default function ChallengeDetail() {
               <span className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg"><Activity className="w-4 h-4" /> {formatActivityName(challenge.activityType)}</span>
               <span className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg"><Clock className="w-4 h-4" /> {challenge.durationDays} days</span>
               <span className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg"><Users className="w-4 h-4" /> {challenge.participantCount || 0} participants</span>
+              {challenge.randomizeReps && (
+                <span className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1.5 rounded-lg shadow-sm">Randomized 🔥</span>
+              )}
             </div>
+            {challenge.randomizeReps && (
+              <p className="text-xs text-muted-foreground mt-2 italic">Varying daily targets prevent plateaus and keep your muscles guessing.</p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {streak > 0 && (

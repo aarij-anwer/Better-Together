@@ -131,6 +131,9 @@ function Dashboard() {
                      <div className="flex items-center gap-3 text-sm text-muted-foreground font-semibold">
                        <span className="flex items-center gap-1.5"><Activity className="w-4 h-4" /> {formatActivityName(c.activityType)}</span>
                        <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {c.durationDays} days</span>
+                       {c.randomizeReps && (
+                         <span className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm">Randomized 🔥</span>
+                       )}
                      </div>
                    </div>
                    <span className={`text-xs font-bold px-3 py-1.5 rounded-lg ${c.state === 'active' ? 'bg-green-100 text-green-800' : c.state === 'completed' ? 'bg-blue-100 text-blue-800' : 'bg-yellow-100 text-yellow-800'}`}>
