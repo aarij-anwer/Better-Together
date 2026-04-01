@@ -7,7 +7,7 @@ import { Activity, Trophy, Clock, Users, ArrowRight, Share, CheckCircle2, Flame,
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { formatActivityName } from "@/lib/constants";
+import { formatActivityName, getQuickLogValues } from "@/lib/constants";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -111,6 +111,7 @@ export default function ChallengeDetail() {
   const isViewingRestDay = viewDay != null && viewDay.target === 0;
   const isTodayRestDay = userProgress.todayTarget === 0;
   const displayTarget = viewDay?.target ?? (challenge.dailyTargets ? challenge.dailyTargets[0] : userProgress.todayTarget);
+  const [quickLogSmall, quickLogLarge] = getQuickLogValues(challenge.unit);
 
   const formatDayDate = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00:00');
@@ -210,13 +211,13 @@ export default function ChallengeDetail() {
                   <div className="w-full border-t pt-8">
                     <h4 className="font-black text-xl mb-6 text-center">Log Activity</h4>
                     <div className="flex gap-3 justify-center mb-6 max-w-[340px] mx-auto">
-                      <Button onClick={() => handleLog(10)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+10</Button>
-                      <Button onClick={() => handleLog(20)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+20</Button>
+                      <Button onClick={() => handleLog(quickLogSmall)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+{quickLogSmall} {challenge.unit}</Button>
+                      <Button onClick={() => handleLog(quickLogLarge)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+{quickLogLarge} {challenge.unit}</Button>
                     </div>
                     <div className="flex gap-3 max-w-[340px] mx-auto">
                       <Input 
                         type="number" 
-                        placeholder="Custom..." 
+                        placeholder={`Custom ${challenge.unit}...`}
                         className="h-14 rounded-xl text-center font-bold text-lg border-2" 
                         value={customVal}
                         onChange={e => setCustomVal(e.target.value)}

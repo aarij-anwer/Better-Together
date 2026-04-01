@@ -50,6 +50,18 @@ export function getDefaultTarget(activity: string): number {
   return map[activity] || 10;
 }
 
+export function getQuickLogValues(unit: string): [number, number] {
+  const map: Record<string, [number, number]> = {
+    km: [1, 5],
+    m: [100, 500],
+    steps: [1000, 5000],
+    pages: [10, 20],
+    mins: [5, 15],
+    reps: [10, 20],
+  };
+  return map[unit] || [10, 20];
+}
+
 export function formatActivityName(activity: string): string {
   return activity.charAt(0).toUpperCase() + activity.slice(1);
 }
