@@ -50,8 +50,18 @@ function startOfDay(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-export function getChallengeState(startDate: Date, durationDays: number): "not_started" | "active" | "completed" {
-  const today = startOfDay(new Date());
+export function getClientNow(timezoneOffsetHeader?: string | null): Date {
+  const now = new Date();
+  if (timezoneOffsetHeader == null) return now;
+  const clientOffset = parseInt(timezoneOffsetHeader, 10);
+  if (isNaN(clientOffset)) return now;
+  const serverOffset = now.getTimezoneOffset();
+  const diffMs = (serverOffset - clientOffset) * 60 * 1000;
+  return new Date(now.getTime() + diffMs);
+}
+
+export function getChallengeState(startDate: Date, durationDays: number, clientNow?: Date): "not_started" | "active" | "completed" {
+  const today = startOfDay(clientNow ?? new Date());
   const start = startOfDay(startDate);
   const endDate = new Date(start);
   endDate.setDate(endDate.getDate() + durationDays);
@@ -146,9 +156,9 @@ export function computeAllocatedTotal(
   return days.reduce((sum, d) => sum + d.logged, 0);
 }
 
-export function computeStreak(days: DayProgressItem[], startDate: Date): number {
+export function computeStreak(days: DayProgressItem[], startDate: Date, clientNow?: Date): number {
   const start = startOfDay(startDate);
-  const todayDate = startOfDay(new Date());
+  const todayDate = startOfDay(clientNow ?? new Date());
   const todayIdx = Math.floor((todayDate.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
 
   let checkIdx = todayIdx;

@@ -13,6 +13,7 @@ import {
   computeDailyProgress,
   computeAllocatedTotal,
   computeStreak,
+  getClientNow,
 } from "../lib/challengeUtils";
 import { computeChallengeProgress, getCurrentDay } from "../lib/utils";
 import { generateDailyTargets } from "@workspace/shared";
@@ -87,7 +88,8 @@ router.get("/challenges", async (req, res): Promise<void> => {
           )
         );
 
-      const state = getChallengeState(challenge.startDate, challenge.durationDays);
+      const clientNow = getClientNow(req.headers["x-timezone-offset"] as string | undefined);
+      const state = getChallengeState(challenge.startDate, challenge.durationDays, clientNow);
       const progress = computeChallengeProgress({
         logs,
         startDate: challenge.startDate,
@@ -95,6 +97,7 @@ router.get("/challenges", async (req, res): Promise<void> => {
         targetValue: challenge.targetValue,
         type: challenge.type as "daily" | "total",
         dailyTargets: challenge.dailyTargets as number[] | null,
+        clientNow,
       });
 
       const participantCount = await db
@@ -110,7 +113,7 @@ router.get("/challenges", async (req, res): Promise<void> => {
         totalLogged: progress.totalLogged,
         todayLogged: progress.todayLogged,
         todayTarget: progress.todayTarget,
-        currentDay: getCurrentDay(challenge.startDate, challenge.durationDays),
+        currentDay: getCurrentDay(challenge.startDate, challenge.durationDays, clientNow),
         participantCount: participantCount[0]?.count ?? 0,
         dailyTargets: challenge.dailyTargets,
         randomizeReps: challenge.randomizeReps,
@@ -212,7 +215,8 @@ router.post("/challenges", async (req, res): Promise<void> => {
     challengeId: challenge.id,
   });
 
-  const state = getChallengeState(challenge.startDate, challenge.durationDays);
+  const clientNowCreate = getClientNow(req.headers["x-timezone-offset"] as string | undefined);
+  const state = getChallengeState(challenge.startDate, challenge.durationDays, clientNowCreate);
 
   res.status(201).json({
     ...challenge,
@@ -241,7 +245,8 @@ router.get("/challenges/preview/:inviteCode", async (req, res): Promise<void> =>
     .from(participationsTable)
     .where(eq(participationsTable.challengeId, challenge.id));
 
-  const state = getChallengeState(challenge.startDate, challenge.durationDays);
+  const clientNowPreview = getClientNow(req.headers["x-timezone-offset"] as string | undefined);
+  const state = getChallengeState(challenge.startDate, challenge.durationDays, clientNowPreview);
 
   res.json({
     title: challenge.title,
@@ -345,7 +350,8 @@ router.get("/challenges/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  const state = getChallengeState(challenge.startDate, challenge.durationDays);
+  const clientNow = getClientNow(req.headers["x-timezone-offset"] as string | undefined);
+  const state = getChallengeState(challenge.startDate, challenge.durationDays, clientNow);
 
   const participantCount = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -369,14 +375,15 @@ router.get("/challenges/:id", async (req, res): Promise<void> => {
     targetValue: challenge.targetValue,
     type: challenge.type as "daily" | "total",
     dailyTargets: challenge.dailyTargets as number[] | null,
+    clientNow,
   });
 
   let streak = 0;
   if (challenge.type === "daily" && progress.days) {
-    streak = computeStreak(progress.days, challenge.startDate);
+    streak = computeStreak(progress.days, challenge.startDate, clientNow);
   }
 
-  const leaderboard = await buildLeaderboard(challenge);
+  const leaderboard = await buildLeaderboard(challenge, clientNow);
 
   res.json({
     challenge: {
@@ -424,7 +431,8 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
     return;
   }
 
-  const state = getChallengeState(challenge.startDate, challenge.durationDays);
+  const clientNow = getClientNow(req.headers["x-timezone-offset"] as string | undefined);
+  const state = getChallengeState(challenge.startDate, challenge.durationDays, clientNow);
   if (state === "not_started") {
     res.status(400).json({ error: "Challenge has not started yet" });
     return;
@@ -445,7 +453,7 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
   const challengeDailyTargets = challenge.dailyTargets as number[] | null;
 
   if (challengeDailyTargets) {
-    const currentDay = getCurrentDay(challenge.startDate, challenge.durationDays);
+    const currentDay = getCurrentDay(challenge.startDate, challenge.durationDays, clientNow);
     const todayTarget = challengeDailyTargets[currentDay - 1] ?? 0;
     if (todayTarget === 0) {
       res.status(400).json({ error: "Today is a rest day — no progress can be logged" });
@@ -464,7 +472,7 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
     );
 
   if (challenge.type === "daily") {
-    const currentDay = getCurrentDay(challenge.startDate, challenge.durationDays);
+    const currentDay = getCurrentDay(challenge.startDate, challenge.durationDays, clientNow);
     const daysUpToToday = challengeDailyTargets
       ? challengeDailyTargets.slice(0, currentDay)
       : Array.from({ length: currentDay }, () => challenge.targetValue);
@@ -478,7 +486,7 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
     valueToLog = Math.min(valueToLog, remaining);
   }
 
-  const now = new Date();
+  const now = clientNow;
   await db.insert(progressLogsTable).values({
     userId: req.user.id,
     challengeId,
@@ -495,6 +503,7 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
     targetValue: challenge.targetValue,
     type: challenge.type as "daily" | "total",
     dailyTargets: challengeDailyTargets,
+    clientNow,
   });
 
   res.json({
@@ -537,6 +546,7 @@ router.get("/challenges/:id/progress", async (req, res): Promise<void> => {
       )
     );
 
+  const clientNow = getClientNow(req.headers["x-timezone-offset"] as string | undefined);
   const progress = computeChallengeProgress({
     logs,
     startDate: challenge.startDate,
@@ -544,11 +554,12 @@ router.get("/challenges/:id/progress", async (req, res): Promise<void> => {
     targetValue: challenge.targetValue,
     type: challenge.type as "daily" | "total",
     dailyTargets: challenge.dailyTargets as number[] | null,
+    clientNow,
   });
 
   let streak = 0;
   if (challenge.type === "daily" && progress.days) {
-    streak = computeStreak(progress.days, challenge.startDate);
+    streak = computeStreak(progress.days, challenge.startDate, clientNow);
   }
 
   res.json({
@@ -584,11 +595,12 @@ router.get("/challenges/:id/leaderboard", async (req, res): Promise<void> => {
     return;
   }
 
-  const leaderboard = await buildLeaderboard(challenge);
+  const clientNow = getClientNow(req.headers["x-timezone-offset"] as string | undefined);
+  const leaderboard = await buildLeaderboard(challenge, clientNow);
   res.json(leaderboard);
 });
 
-async function buildLeaderboard(challenge: typeof challengesTable.$inferSelect) {
+async function buildLeaderboard(challenge: typeof challengesTable.$inferSelect, clientNow?: Date) {
   const participants = await db
     .select({
       userId: participationsTable.userId,
@@ -600,7 +612,7 @@ async function buildLeaderboard(challenge: typeof challengesTable.$inferSelect) 
     .innerJoin(usersTable, eq(participationsTable.userId, usersTable.id))
     .where(eq(participationsTable.challengeId, challenge.id));
 
-  const state = getChallengeState(challenge.startDate, challenge.durationDays);
+  const state = getChallengeState(challenge.startDate, challenge.durationDays, clientNow);
 
   if (state === "not_started") {
     return participants.map((p) => {
@@ -636,11 +648,12 @@ async function buildLeaderboard(challenge: typeof challengesTable.$inferSelect) 
         targetValue: challenge.targetValue,
         type: challenge.type as "daily" | "total",
         dailyTargets: challenge.dailyTargets as number[] | null,
+        clientNow,
       });
 
       let streak = 0;
       if (challenge.type === "daily" && progress.days) {
-        streak = computeStreak(progress.days, challenge.startDate);
+        streak = computeStreak(progress.days, challenge.startDate, clientNow);
       }
 
       const percentComplete = progress.totalTarget > 0 ? Math.round((progress.totalLogged / progress.totalTarget) * 10000) / 100 : 0;
