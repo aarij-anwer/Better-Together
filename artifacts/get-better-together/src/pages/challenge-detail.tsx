@@ -141,7 +141,7 @@ export default function ChallengeDetail() {
   const [unitSmall, unitLarge] = getQuickLogValues(challenge.unit);
   const todayTarget = displayTarget || 0;
   const [quickLogSmall, quickLogLarge] = todayTarget > 0 && todayTarget < 20
-    ? [Math.max(1, Math.floor(todayTarget / 2)), todayTarget]
+    ? [Math.max(1, Math.floor(todayTarget / 3)), todayTarget]
     : [unitSmall, unitLarge];
 
   const formatDayDate = (dateStr: string) => {
