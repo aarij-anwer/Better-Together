@@ -151,13 +151,13 @@ export default function ChallengeDetail() {
     <Layout>
       <div className="max-w-4xl mx-auto w-full px-6 md:px-8 py-8 overflow-hidden">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-8">
-          <div className={`flex items-center gap-2 order-first md:order-last ${streak > 0 ? 'justify-between' : 'justify-end'} sm:flex sm:w-auto`}>
-            {streak > 0 && (
+          <div className="grid grid-cols-2 gap-2 w-full order-first md:order-last md:flex md:w-auto">
+            {streak > 0 ? (
               <div className="bg-orange-100 text-orange-600 px-4 py-2 rounded-xl font-black flex items-center justify-center gap-2 text-sm shadow-sm border border-orange-200">
                 <Flame className="w-5 h-5" /> {streak} Day Streak
               </div>
-            )}
-            <Button onClick={copyInvite} variant="outline" className="rounded-xl h-11 border-2 font-bold bg-card text-primary border-primary/20 hover:bg-primary/5">
+            ) : <div className="hidden md:block" />}
+            <Button onClick={copyInvite} variant="outline" className={`rounded-xl h-11 border-2 font-bold bg-card text-primary border-primary/20 hover:bg-primary/5 ${streak <= 0 ? 'col-span-2' : ''}`}>
               <Share className="w-4 h-4 mr-2" /> Invite
             </Button>
           </div>
