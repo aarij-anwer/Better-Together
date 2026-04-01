@@ -262,7 +262,7 @@ export default function ChallengeDetail() {
                             <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black transition-colors
                               ${day.target === 0 ? 'bg-gray-100 text-gray-400' : day.completed ? 'bg-primary text-primary-foreground shadow-md' : day.logged > 0 ? 'bg-primary/20 text-primary' : isPast ? 'bg-red-100 text-red-400' : 'bg-secondary text-muted-foreground'}
                             `}>
-                              {day.target === 0 ? 'R' : day.completed ? <CheckCircle2 className="w-4 h-4" /> : (day.logged > 0 ? Math.round((day.logged / day.target) * 100) + '%' : (day.target < 100 ? day.target : ''))}
+                              {day.target === 0 ? 'R' : day.completed ? <CheckCircle2 className="w-4 h-4" /> : (day.logged > 0 ? Math.round((day.logged / day.target) * 100) + '%' : <span className={day.target >= 1000 ? 'text-[7px]' : day.target >= 100 ? 'text-[8px]' : ''}>{day.target}</span>)}
                             </div>
                             <span className={`text-[10px] font-bold uppercase leading-tight ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
                               {isToday ? 'Now' : new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'narrow' })}
