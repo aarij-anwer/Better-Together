@@ -153,7 +153,7 @@ export default function ChallengeDetail() {
         {isNotStarted && (
            <div className="bg-secondary/50 border-2 border-secondary text-secondary-foreground p-6 rounded-2xl mb-8 text-center shadow-sm">
              <h3 className="font-black text-xl mb-1">Challenge hasn't started yet</h3>
-             <p className="text-muted-foreground font-medium text-lg">Starts on {new Date(challenge.startDate).toLocaleDateString()}</p>
+             <p className="text-muted-foreground font-medium text-lg">Starts on {new Date(challenge.startDate).toLocaleDateString('en-US', { timeZone: 'UTC' })}</p>
            </div>
         )}
 
