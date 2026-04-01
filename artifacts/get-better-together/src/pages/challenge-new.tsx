@@ -75,7 +75,7 @@ export default function ChallengeNew() {
         type: "daily",
         targetValue: data.targetValue,
         durationDays: data.durationDays,
-        startDate: data.startDate ? data.startDate.toISOString().split('T')[0] : undefined,
+        startDate: data.startDate ? `${data.startDate.getFullYear()}-${String(data.startDate.getMonth() + 1).padStart(2, '0')}-${String(data.startDate.getDate()).padStart(2, '0')}` : undefined,
         randomizeReps: randomizeReps || undefined,
         restDayEnabled: restDayEnabled || undefined,
       }

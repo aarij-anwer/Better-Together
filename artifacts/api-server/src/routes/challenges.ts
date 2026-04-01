@@ -188,8 +188,9 @@ router.post("/challenges", async (req, res): Promise<void> => {
     slugRetries++;
   }
 
-  const resolvedStartDate = startDate ? new Date(startDate) : new Date();
-  const startOfDay = new Date(resolvedStartDate.getFullYear(), resolvedStartDate.getMonth(), resolvedStartDate.getDate());
+  const clientNowCreate = getClientNow(req.headers["x-timezone-offset"] as string | undefined);
+  const resolvedStartDate = startDate ? new Date(startDate + 'T00:00:00Z') : clientNowCreate;
+  const startOfDay = new Date(Date.UTC(resolvedStartDate.getUTCFullYear(), resolvedStartDate.getUTCMonth(), resolvedStartDate.getUTCDate()));
 
   const [challenge] = await db
     .insert(challengesTable)
@@ -215,7 +216,6 @@ router.post("/challenges", async (req, res): Promise<void> => {
     challengeId: challenge.id,
   });
 
-  const clientNowCreate = getClientNow(req.headers["x-timezone-offset"] as string | undefined);
   const state = getChallengeState(challenge.startDate, challenge.durationDays, clientNowCreate);
 
   res.status(201).json({
