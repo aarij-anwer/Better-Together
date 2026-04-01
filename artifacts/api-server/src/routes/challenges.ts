@@ -674,11 +674,8 @@ async function buildLeaderboard(challenge: typeof challengesTable.$inferSelect, 
 
   entries.sort((a, b) => {
     if (b.totalLogged !== a.totalLogged) return b.totalLogged - a.totalLogged;
+    if (b.streak !== a.streak) return b.streak - a.streak;
     return b.percentComplete - a.percentComplete;
-  });
-
-  entries.forEach((e, i) => {
-    e.rank = i + 1;
   });
 
   return entries;

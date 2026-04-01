@@ -217,7 +217,7 @@ export default function ChallengeNew() {
                     <CollapsibleTrigger asChild>
                       <button
                         type="button"
-                        className="flex items-center justify-between w-full text-left py-3 px-4 rounded-xl border-2 hover:bg-muted/50 transition-colors"
+                        className="flex items-center justify-between w-full text-left py-3 px-4 rounded-xl hover:bg-muted/50 transition-colors"
                       >
                         <span className="text-base font-bold">Customize</span>
                         <ChevronDown className={cn("h-5 w-5 transition-transform", customizeOpen && "rotate-180")} />

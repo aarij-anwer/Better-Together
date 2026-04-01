@@ -291,9 +291,6 @@ export default function ChallengeDetail() {
                 <div className="space-y-5">
                   {leaderboard.slice(0, 5).map((entry, idx) => (
                     <div key={entry.userId} className="flex items-center gap-3 group cursor-pointer" onClick={() => setLocation(`/challenge/${challenge.slug || id}/leaderboard`)}>
-                      <div className={`w-6 text-center font-black text-lg ${idx === 0 ? 'text-yellow-500' : idx === 1 ? 'text-gray-400' : idx === 2 ? 'text-amber-700' : 'text-muted-foreground'}`}>
-                        {entry.rank || '-'}
-                      </div>
                       <Avatar className="w-10 h-10 border-2 shadow-sm transition-transform group-hover:scale-105">
                         {entry.profileImageUrl ? <AvatarImage src={entry.profileImageUrl} /> : <AvatarFallback className="bg-secondary font-bold text-sm">{entry.userName?.charAt(0) || 'U'}</AvatarFallback>}
                       </Avatar>
