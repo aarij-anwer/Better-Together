@@ -189,8 +189,8 @@ router.post("/challenges", async (req, res): Promise<void> => {
   }
 
   const clientNowCreate = getClientNow(req.headers["x-timezone-offset"] as string | undefined);
-  const resolvedStartDate = startDate ? new Date(startDate + 'T00:00:00Z') : clientNowCreate;
-  const startOfDay = new Date(Date.UTC(resolvedStartDate.getUTCFullYear(), resolvedStartDate.getUTCMonth(), resolvedStartDate.getUTCDate()));
+  const resolvedStartDate = startDate ? new Date(startDate) : clientNowCreate;
+  const startOfDay = new Date(Date.UTC(resolvedStartDate.getFullYear(), resolvedStartDate.getMonth(), resolvedStartDate.getDate()));
 
   const [challenge] = await db
     .insert(challengesTable)
