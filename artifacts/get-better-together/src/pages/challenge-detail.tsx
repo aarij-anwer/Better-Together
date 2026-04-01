@@ -130,8 +130,8 @@ export default function ChallengeDetail() {
             </div>
             <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground font-bold">
               <span className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg"><Activity className="w-4 h-4" /> {formatActivityName(challenge.activityType)}</span>
-              <span className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg"><Clock className="w-4 h-4" /> {challenge.durationDays} days</span>
-              <span className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg"><Users className="w-4 h-4" /> {challenge.participantCount || 0} participants</span>
+              <span onClick={() => document.getElementById('day-progress')?.scrollIntoView({ behavior: 'smooth' })} className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg cursor-pointer"><Clock className="w-4 h-4" /> {challenge.durationDays} days</span>
+              <span onClick={() => document.getElementById('leaderboard')?.scrollIntoView({ behavior: 'smooth' })} className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg cursor-pointer"><Users className="w-4 h-4" /> {challenge.participantCount || 0} participants</span>
               {challenge.randomizeReps && (
                 <span onClick={() => toast.info("Varying daily targets prevent plateaus and keep your muscles guessing.")} className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1.5 rounded-lg shadow-sm cursor-pointer">Randomized 🔥</span>
               )}
@@ -235,7 +235,7 @@ export default function ChallengeDetail() {
               </Card>
 
               {challenge.type === 'daily' && userProgress.days && (
-                <Card className="p-6 rounded-[2rem] border shadow-sm">
+                <Card id="day-progress" className="p-6 rounded-[2rem] border shadow-sm scroll-mt-4">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="font-bold text-lg uppercase tracking-wider text-muted-foreground">Day Progress</h3>
                     {challenge.dailyTargets && challenge.dailyTargets.length > 0 && (
@@ -279,7 +279,7 @@ export default function ChallengeDetail() {
            </div>
 
            <div className="space-y-6">
-              <Card className="p-6 rounded-[2rem] border shadow-sm bg-card/50">
+              <Card id="leaderboard" className="p-6 rounded-[2rem] border shadow-sm bg-card/50 scroll-mt-4">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="font-black text-xl flex items-center gap-2"><Trophy className="w-6 h-6 text-primary" /> Leaderboard</h3>
                   <Button variant="ghost" size="sm" onClick={() => setLocation(`/challenge/${challenge.slug || id}/leaderboard`)} className="text-primary hover:text-primary/80 font-bold px-2 rounded-lg">
