@@ -8,7 +8,7 @@ import { Activity, Trophy, Clock, Users, ArrowRight, Share, CheckCircle2, Flame,
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { formatActivityName, getQuickLogValues } from "@/lib/constants";
+import { formatActivityName, getQuickLogValues, buildInviteText } from "@/lib/constants";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -119,9 +119,14 @@ export default function ChallengeDetail() {
   };
 
   const copyInvite = () => {
-    const url = `${window.location.origin}/join/${challenge.inviteCode}`;
-    navigator.clipboard.writeText(url);
-    toast.success("Invite link copied to clipboard");
+    const text = buildInviteText({
+      title: challenge.title,
+      durationDays: challenge.durationDays,
+      activityType: challenge.activityType,
+      inviteCode: challenge.inviteCode,
+    });
+    navigator.clipboard.writeText(text);
+    toast.success("Invite message copied to clipboard");
   };
 
   const isCompleted = challenge.state === 'completed';

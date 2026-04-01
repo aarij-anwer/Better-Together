@@ -65,3 +65,14 @@ export function getQuickLogValues(unit: string): [number, number] {
 export function formatActivityName(activity: string): string {
   return activity.charAt(0).toUpperCase() + activity.slice(1);
 }
+
+export function buildInviteText(params: {
+  title: string;
+  durationDays: number;
+  activityType: string;
+  inviteCode: string;
+}): string {
+  const { title, durationDays, activityType, inviteCode } = params;
+  const joinUrl = `https://get-better-together.replit.app/join/${inviteCode}`;
+  return `I'd like to invite you to ${title}. This is a ${durationDays}-day ${activityType} challenge where the goal is to stay consistent, hit your daily targets, and push a little further each day.\n\nGet Better Together helps you stay accountable with friends — combining streaks, progress tracking, and friendly competition to keep everyone showing up and finishing strong.\n\nJoin here:\n${joinUrl}`;
+}
