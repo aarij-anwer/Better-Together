@@ -255,19 +255,19 @@ export default function ChallengeDetail() {
                           <button
                             key={day.date}
                             onClick={() => setSelectedDayIdx(idx === todayDayIdx ? null : idx)}
-                            className={`flex flex-col items-center gap-1.5 w-[52px] p-2 rounded-xl transition-all cursor-pointer shrink-0
+                            className={`flex flex-col items-center gap-1.5 w-[60px] p-2 rounded-xl transition-all cursor-pointer shrink-0
                               ${isSelected ? 'bg-primary/10 ring-2 ring-primary' : 'hover:bg-secondary'}
                             `}
                           >
-                            <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-black transition-colors
+                            <div className={`w-11 h-11 rounded-full flex items-center justify-center text-sm font-black transition-colors
                               ${day.target === 0 ? 'bg-gray-100 text-gray-400' : day.completed ? 'bg-primary text-primary-foreground shadow-md' : day.logged > 0 ? 'bg-primary/20 text-primary' : isPast ? 'bg-red-100 text-red-400' : 'bg-secondary text-muted-foreground'}
                             `}>
-                              {day.target === 0 ? 'R' : day.completed ? <CheckCircle2 className="w-4 h-4" /> : (day.logged > 0 ? Math.round((day.logged / day.target) * 100) + '%' : <span className={day.target >= 1000 ? 'text-[7px]' : day.target >= 100 ? 'text-[8px]' : ''}>{day.target}</span>)}
+                              {day.target === 0 ? 'R' : day.completed ? <CheckCircle2 className="w-5 h-5" /> : (day.logged > 0 ? Math.round((day.logged / day.target) * 100) + '%' : <span className={day.target >= 1000 ? 'text-[8px]' : day.target >= 100 ? 'text-[10px]' : ''}>{day.target}</span>)}
                             </div>
-                            <span className={`text-[10px] font-bold uppercase leading-tight ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
+                            <span className={`text-[11px] font-bold uppercase leading-tight ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
                               {isToday ? 'Now' : new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'narrow' })}
                             </span>
-                            <span className={`text-[9px] font-semibold leading-none ${isToday ? 'text-primary' : 'text-muted-foreground/70'}`}>
+                            <span className={`text-[10px] font-semibold leading-none ${isToday ? 'text-primary' : 'text-muted-foreground/70'}`}>
                               {formatDayDate(day.date)}
                             </span>
                           </button>
