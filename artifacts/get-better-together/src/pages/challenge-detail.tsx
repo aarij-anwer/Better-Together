@@ -40,6 +40,19 @@ export default function ChallengeDetail() {
   }, []);
   
   const { data, isLoading } = useGetChallenge(id as string, { query: { enabled: !!id, queryKey: getGetChallengeQueryKey(id as string) } });
+
+  const todayDayIdx = data?.userProgress?.days?.findIndex(d => {
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return d.date === todayStr;
+  }) ?? -1;
+
+  useEffect(() => {
+    if (todayDayIdx >= 0 && !hasScrolledToToday.current) {
+      hasScrolledToToday.current = true;
+      setTimeout(() => scrollDayIntoView(todayDayIdx), 100);
+    }
+  }, [todayDayIdx, scrollDayIntoView]);
   
   if (isLoading) return (
     <Layout>
@@ -120,15 +133,7 @@ export default function ChallengeDetail() {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   })();
 
-  const todayDayIdx = userProgress.days?.findIndex(d => d.date === todayStr) ?? -1;
   const viewIdx = selectedDayIdx ?? todayDayIdx;
-
-  useEffect(() => {
-    if (todayDayIdx >= 0 && !hasScrolledToToday.current) {
-      hasScrolledToToday.current = true;
-      setTimeout(() => scrollDayIntoView(todayDayIdx), 100);
-    }
-  }, [todayDayIdx, scrollDayIntoView]);
   const viewDay = userProgress.days && viewIdx >= 0 ? userProgress.days[viewIdx] : null;
   const isViewingRestDay = viewDay != null && viewDay.target === 0;
   const isTodayRestDay = userProgress.todayTarget === 0;
