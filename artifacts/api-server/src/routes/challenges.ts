@@ -464,11 +464,13 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
     );
 
   if (challenge.type === "daily") {
-    const maxTotal = challengeDailyTargets
-      ? challengeDailyTargets.reduce((sum, t) => sum + t, 0)
-      : challenge.targetValue * challenge.durationDays;
+    const currentDay = getCurrentDay(challenge.startDate, challenge.durationDays);
+    const daysUpToToday = challengeDailyTargets
+      ? challengeDailyTargets.slice(0, currentDay)
+      : Array.from({ length: currentDay }, () => challenge.targetValue);
+    const maxTotalToDate = daysUpToToday.reduce((sum, t) => sum + t, 0);
     const allocatedTotal = computeAllocatedTotal(existingLogs, challenge.startDate, challenge.durationDays, challenge.targetValue, challengeDailyTargets);
-    const remaining = maxTotal - allocatedTotal;
+    const remaining = maxTotalToDate - allocatedTotal;
     if (remaining <= 0) {
       res.status(400).json({ error: "Challenge fully completed, no more progress can be logged" });
       return;

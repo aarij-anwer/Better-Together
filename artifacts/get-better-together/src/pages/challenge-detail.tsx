@@ -233,7 +233,7 @@ export default function ChallengeDetail() {
 
               {challenge.type === 'daily' && userProgress.days && (
                 <Card className="p-6 rounded-[2rem] border shadow-sm">
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center justify-between mb-3">
                     <h3 className="font-bold text-lg uppercase tracking-wider text-muted-foreground">Day Progress</h3>
                     {challenge.dailyTargets && challenge.dailyTargets.length > 0 && (
                       <Button variant="ghost" size="sm" onClick={() => setScheduleOpen(true)} className="text-primary hover:text-primary/80 font-bold px-2 rounded-lg">
