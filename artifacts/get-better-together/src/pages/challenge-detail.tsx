@@ -133,12 +133,9 @@ export default function ChallengeDetail() {
               <span className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg"><Clock className="w-4 h-4" /> {challenge.durationDays} days</span>
               <span className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg"><Users className="w-4 h-4" /> {challenge.participantCount || 0} participants</span>
               {challenge.randomizeReps && (
-                <span className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1.5 rounded-lg shadow-sm">Randomized 🔥</span>
+                <span onClick={() => toast.info("Varying daily targets prevent plateaus and keep your muscles guessing.")} className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1.5 rounded-lg shadow-sm cursor-pointer">Randomized 🔥</span>
               )}
             </div>
-            {challenge.randomizeReps && (
-              <p className="text-xs text-muted-foreground mt-2 italic">Varying daily targets prevent plateaus and keep your muscles guessing.</p>
-            )}
           </div>
           <div className="grid grid-cols-2 gap-2 w-full sm:flex sm:w-auto">
             {streak > 0 && (
