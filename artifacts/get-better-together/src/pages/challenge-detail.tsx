@@ -138,7 +138,11 @@ export default function ChallengeDetail() {
   const isViewingRestDay = viewDay != null && viewDay.target === 0;
   const isTodayRestDay = userProgress.todayTarget === 0;
   const displayTarget = viewDay?.target ?? (challenge.dailyTargets ? challenge.dailyTargets[0] : userProgress.todayTarget);
-  const [quickLogSmall, quickLogLarge] = getQuickLogValues(challenge.unit);
+  const [unitSmall, unitLarge] = getQuickLogValues(challenge.unit);
+  const todayTarget = displayTarget || 0;
+  const [quickLogSmall, quickLogLarge] = todayTarget > 0 && todayTarget < 20
+    ? [Math.max(1, Math.floor(todayTarget / 2)), todayTarget]
+    : [unitSmall, unitLarge];
 
   const formatDayDate = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00:00');
