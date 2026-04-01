@@ -175,7 +175,7 @@ export default function ChallengeDetail() {
               <span onClick={() => document.getElementById('day-progress')?.scrollIntoView({ behavior: 'smooth' })} className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg cursor-pointer"><Clock className="w-4 h-4" /> {challenge.durationDays} days</span>
               <span onClick={() => document.getElementById('leaderboard')?.scrollIntoView({ behavior: 'smooth' })} className="flex items-center gap-1.5 bg-secondary text-secondary-foreground px-3 py-1.5 rounded-lg cursor-pointer"><Users className="w-4 h-4" /> {challenge.participantCount || 0} participants</span>
               {challenge.randomizeReps && (
-                <span onClick={() => toast.info("Varying daily targets prevent plateaus and keep your muscles guessing.")} className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1.5 rounded-lg shadow-sm cursor-pointer">Randomized 🔥</span>
+                <span onClick={() => toast.info("Varying daily targets prevent plateaus and keep your muscles guessing.")} className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1.5 rounded-lg shadow-sm cursor-pointer">Variable Targets 🔥</span>
               )}
             </div>
           </div>
