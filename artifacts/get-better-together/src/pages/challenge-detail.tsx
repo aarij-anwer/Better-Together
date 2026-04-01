@@ -140,13 +140,13 @@ export default function ChallengeDetail() {
               <p className="text-xs text-muted-foreground mt-2 italic">Varying daily targets prevent plateaus and keep your muscles guessing.</p>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full">
             {streak > 0 && (
-              <div className="bg-orange-100 text-orange-600 px-4 py-2 rounded-xl font-black flex items-center gap-2 text-sm shadow-sm border border-orange-200">
+              <div className="flex-1 bg-orange-100 text-orange-600 px-4 py-2 rounded-xl font-black flex items-center justify-center gap-2 text-sm shadow-sm border border-orange-200">
                 <Flame className="w-5 h-5" /> {streak} Day Streak
               </div>
             )}
-            <Button onClick={copyInvite} variant="outline" className="rounded-xl h-11 border-2 font-bold bg-card text-primary border-primary/20 hover:bg-primary/5">
+            <Button onClick={copyInvite} variant="outline" className="flex-1 rounded-xl h-11 border-2 font-bold bg-card text-primary border-primary/20 hover:bg-primary/5">
               <Share className="w-4 h-4 mr-2" /> Invite
             </Button>
           </div>
