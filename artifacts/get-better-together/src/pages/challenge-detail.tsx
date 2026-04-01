@@ -1,3 +1,4 @@
+import { useRef, useEffect, useCallback } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useGetChallenge, useLogProgress, getGetChallengeQueryKey, getGetProgressQueryKey, getListChallengesQueryKey, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
@@ -23,6 +24,20 @@ export default function ChallengeDetail() {
   const [customVal, setCustomVal] = useState("");
   const [selectedDayIdx, setSelectedDayIdx] = useState<number | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const dayRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const hasScrolledToToday = useRef(false);
+
+  const scrollDayIntoView = useCallback((idx: number) => {
+    const el = dayRefs.current.get(idx);
+    if (el && scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const elLeft = el.offsetLeft;
+      const elWidth = el.offsetWidth;
+      const containerWidth = container.clientWidth;
+      container.scrollTo({ left: elLeft - containerWidth / 2 + elWidth / 2, behavior: 'smooth' });
+    }
+  }, []);
   
   const { data, isLoading } = useGetChallenge(id as string, { query: { enabled: !!id, queryKey: getGetChallengeQueryKey(id as string) } });
   
@@ -107,6 +122,13 @@ export default function ChallengeDetail() {
 
   const todayDayIdx = userProgress.days?.findIndex(d => d.date === todayStr) ?? -1;
   const viewIdx = selectedDayIdx ?? todayDayIdx;
+
+  useEffect(() => {
+    if (todayDayIdx >= 0 && !hasScrolledToToday.current) {
+      hasScrolledToToday.current = true;
+      setTimeout(() => scrollDayIntoView(todayDayIdx), 100);
+    }
+  }, [todayDayIdx, scrollDayIntoView]);
   const viewDay = userProgress.days && viewIdx >= 0 ? userProgress.days[viewIdx] : null;
   const isViewingRestDay = viewDay != null && viewDay.target === 0;
   const isTodayRestDay = userProgress.todayTarget === 0;
@@ -245,7 +267,7 @@ export default function ChallengeDetail() {
                       </Button>
                     )}
                   </div>
-                  <div className="overflow-x-auto pb-2">
+                  <div className="overflow-x-auto pb-2" ref={scrollContainerRef}>
                     <div className="flex gap-1 p-1" style={{ width: 'max-content' }}>
                       {userProgress.days.map((day, idx) => {
                         const isToday = day.date === todayStr;
@@ -254,7 +276,8 @@ export default function ChallengeDetail() {
                         return (
                           <button
                             key={day.date}
-                            onClick={() => setSelectedDayIdx(idx === todayDayIdx ? null : idx)}
+                            ref={(el) => { if (el) dayRefs.current.set(idx, el); else dayRefs.current.delete(idx); }}
+                            onClick={() => { setSelectedDayIdx(idx === todayDayIdx ? null : idx); scrollDayIntoView(idx); }}
                             className={`flex flex-col items-center gap-1.5 w-[60px] p-2 rounded-xl transition-all cursor-pointer shrink-0
                               ${isSelected ? 'bg-primary/10 ring-2 ring-primary' : 'hover:bg-secondary'}
                             `}
