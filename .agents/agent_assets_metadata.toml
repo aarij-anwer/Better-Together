@@ -41,3 +41,9 @@ id = "k-nEfjkCDn6z8ao8mfiPf"
 uri = "file://artifacts/get-better-together/public/project-image.png"
 type = "image"
 title = "Get Better Together - Project Image"
+
+[[outputs]]
+id = "JsdyICNM46ti9fOlNWOfF"
+uri = "file://.local/outputs/Better-Together.pdf"
+type = "pdf"
+title = "Better Together.pdf"
