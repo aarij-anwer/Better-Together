@@ -53,3 +53,9 @@ id = "vRI3_fWMOG2Xenxr7uAEa"
 uri = "file://attached_assets/youtube_thumbnail.jpg"
 type = "image"
 title = "YouTube Thumbnail - Week 2 Update"
+
+[[outputs]]
+id = "j7V4YRMkwBK8uNa4kVIGH"
+uri = "file://attached_assets/youtube_thumbnail_week1.jpg"
+type = "image"
+title = "YouTube Thumbnail - Intro to Get Better Together"
