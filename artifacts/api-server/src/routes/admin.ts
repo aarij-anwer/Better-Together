@@ -2,6 +2,7 @@ import { Router, type IRouter, type Request, type Response } from "express";
 import { asc, eq } from "drizzle-orm";
 import { db, usersTable, challengesTable } from "@workspace/db";
 import { runNotifications } from "../lib/notifications";
+import { seedPublicChallenge } from "../lib/publicChallenges";
 import { isEmailEnabled } from "../lib/email";
 import { logger } from "../lib/logger";
 
@@ -63,6 +64,39 @@ router.post("/admin/notifications/run", async (req: Request, res: Response): Pro
   } catch (err) {
     logger.error({ err }, "Manual notification run failed");
     res.status(500).json({ error: "Notification run failed", details: String(err) });
+  }
+});
+
+router.post("/admin/challenges/seed", async (req: Request, res: Response): Promise<void> => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const currentUserId = req.user?.id;
+  if (!currentUserId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const [firstUserId, isCreator] = await Promise.all([
+    getFirstUserId(),
+    isChallengeCreator(currentUserId),
+  ]);
+
+  const isAuthorized = currentUserId === firstUserId || isCreator;
+  if (!isAuthorized) {
+    res.status(403).json({ error: "Forbidden — only challenge creators or the app owner can seed challenges." });
+    return;
+  }
+
+  try {
+    logger.info({ triggeredBy: currentUserId }, "Manual public challenge seed triggered");
+    const result = await seedPublicChallenge();
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    logger.error({ err }, "Manual public challenge seed failed");
+    res.status(500).json({ error: "Seed failed", details: String(err) });
   }
 });
 
