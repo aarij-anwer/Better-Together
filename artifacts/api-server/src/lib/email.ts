@@ -57,7 +57,15 @@ export function getAppUrl(): string {
   return "https://getbettertogether.app";
 }
 
+function isValidEmail(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 export async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+  if (!isValidEmail(to)) {
+    logger.warn({ to }, "Skipping send — invalid email address format");
+    return false;
+  }
   try {
     const { apiKey, fromEmail } = await getCredentials();
     const resend = new Resend(apiKey);
