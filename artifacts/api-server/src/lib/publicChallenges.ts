@@ -1,4 +1,4 @@
-import { asc, desc, eq, and, gt } from "drizzle-orm";
+import { asc, desc, eq, and, gt, lte } from "drizzle-orm";
 import { db, usersTable, challengesTable } from "@workspace/db";
 import { generateDailyTargets } from "@workspace/shared";
 import { generateSlug, generateInviteCode, getUnitForActivity } from "./challengeUtils";
@@ -30,40 +30,34 @@ export async function seedPublicChallenge(): Promise<SeedResult> {
     return { created: false, reason: "No users registered yet" };
   }
 
-  // Determine next activity in rotation based on the most recent public challenge
-  const [lastPublic] = await db
+  const now = new Date();
+
+  // Idempotency: if ANY upcoming public challenge exists, there is nothing to do.
+  // This ensures repeated runs on the same day are true no-ops.
+  const [anyUpcoming] = await db
+    .select({ id: challengesTable.id })
+    .from(challengesTable)
+    .where(and(eq(challengesTable.isPublic, true), gt(challengesTable.startDate, now)))
+    .limit(1);
+
+  if (anyUpcoming) {
+    return { created: false, reason: "An upcoming public challenge already exists" };
+  }
+
+  // Determine rotation from the most recent STARTED (already begun) public challenge.
+  // Anchoring to started challenges ensures this is stable across repeated runs.
+  const [lastStarted] = await db
     .select({ activityType: challengesTable.activityType })
     .from(challengesTable)
-    .where(eq(challengesTable.isPublic, true))
+    .where(and(eq(challengesTable.isPublic, true), lte(challengesTable.startDate, now)))
     .orderBy(desc(challengesTable.startDate))
     .limit(1);
 
-  const lastIndex = lastPublic
-    ? ROTATION.findIndex((r) => r.activityType === lastPublic.activityType)
+  const lastIndex = lastStarted
+    ? ROTATION.findIndex((r) => r.activityType === lastStarted.activityType)
     : -1;
   const nextIndex = (lastIndex + 1) % ROTATION.length;
   const activity = ROTATION[nextIndex];
-
-  // Idempotency: skip if an upcoming public challenge for this specific activity already exists
-  const now = new Date();
-  const [existing] = await db
-    .select({ id: challengesTable.id })
-    .from(challengesTable)
-    .where(
-      and(
-        eq(challengesTable.isPublic, true),
-        eq(challengesTable.activityType, activity.activityType),
-        gt(challengesTable.startDate, now),
-      ),
-    )
-    .limit(1);
-
-  if (existing) {
-    return {
-      created: false,
-      reason: `Upcoming public ${activity.activityType} challenge already exists`,
-    };
-  }
 
   // Start date: DAYS_AHEAD days from today, midnight UTC
   const startDate = new Date(Date.UTC(
