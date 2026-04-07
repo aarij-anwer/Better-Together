@@ -132,7 +132,7 @@ export function challengeEndedTemplate(params: {
       Head over to the leaderboard to see where you landed!
     </p>
     <p style="margin:0 0 4px;font-size:15px;color:${DARK};line-height:1.6;">
-      Great work showing up. See you in the next one. &#128170;
+      Great work showing up. See you in the next one. Feel free to create a challenge and invite friends &#128170;
     </p>
     <div style="text-align:center;margin-top:8px;">
       ${ctaButton(params.challengeUrl, "View final leaderboard →")}
