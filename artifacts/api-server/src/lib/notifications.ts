@@ -198,6 +198,7 @@ export async function runNotifications(): Promise<NotificationSummary> {
         if (reminderDayIndex === -1) continue;
 
         const reminderNumber = reminderDayIndex + 1;
+        if (reminderNumber > 3) continue;
 
         const [existing] = await db
           .select()

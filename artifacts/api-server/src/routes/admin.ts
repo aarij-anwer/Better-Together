@@ -1,6 +1,6 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { asc } from "drizzle-orm";
-import { db, usersTable } from "@workspace/db";
+import { asc, eq } from "drizzle-orm";
+import { db, usersTable, challengesTable } from "@workspace/db";
 import { runNotifications } from "../lib/notifications";
 import { isEmailEnabled } from "../lib/email";
 import { logger } from "../lib/logger";
@@ -16,6 +16,15 @@ async function getFirstUserId(): Promise<string | null> {
   return first?.id ?? null;
 }
 
+async function isChallengeCreator(userId: string): Promise<boolean> {
+  const [challenge] = await db
+    .select({ id: challengesTable.id })
+    .from(challengesTable)
+    .where(eq(challengesTable.createdById, userId))
+    .limit(1);
+  return Boolean(challenge);
+}
+
 router.post("/admin/notifications/run", async (req: Request, res: Response): Promise<void> => {
   if (!req.isAuthenticated()) {
     res.status(401).json({ error: "Unauthorized" });
@@ -23,9 +32,19 @@ router.post("/admin/notifications/run", async (req: Request, res: Response): Pro
   }
 
   const currentUserId = req.user?.id;
-  const firstUserId = await getFirstUserId();
-  if (!currentUserId || currentUserId !== firstUserId) {
-    res.status(403).json({ error: "Forbidden — only the app owner can trigger notifications." });
+  if (!currentUserId) {
+    res.status(401).json({ error: "Unauthorized" });
+    return;
+  }
+
+  const [firstUserId, isCreator] = await Promise.all([
+    getFirstUserId(),
+    isChallengeCreator(currentUserId),
+  ]);
+
+  const isAuthorized = currentUserId === firstUserId || isCreator;
+  if (!isAuthorized) {
+    res.status(403).json({ error: "Forbidden — only challenge creators or the app owner can trigger notifications." });
     return;
   }
 
