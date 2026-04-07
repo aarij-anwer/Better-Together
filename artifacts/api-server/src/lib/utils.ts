@@ -16,6 +16,7 @@ export interface ChallengeProgressInput {
   targetValue: number;
   type: "daily" | "total";
   dailyTargets?: number[] | null;
+  noMax?: boolean;
   clientNow?: Date;
 }
 
@@ -28,10 +29,10 @@ export interface ChallengeProgressResult {
 }
 
 export function computeChallengeProgress(input: ChallengeProgressInput): ChallengeProgressResult {
-  const { logs, startDate, durationDays, targetValue, type, dailyTargets, clientNow } = input;
+  const { logs, startDate, durationDays, targetValue, type, dailyTargets, noMax, clientNow } = input;
 
   if (type === "daily") {
-    const dayProgress = computeDailyProgress(logs, startDate, durationDays, targetValue, dailyTargets);
+    const dayProgress = computeDailyProgress(logs, startDate, durationDays, targetValue, dailyTargets, noMax, clientNow);
     const totalLogged = dayProgress.reduce((sum, d) => sum + d.logged, 0);
     const totalTarget = dayProgress.reduce((sum, d) => sum + d.target, 0);
     const now = clientNow ?? new Date();

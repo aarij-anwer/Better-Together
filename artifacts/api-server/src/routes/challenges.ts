@@ -417,6 +417,7 @@ router.get("/challenges/:id", async (req, res): Promise<void> => {
     targetValue: challenge.targetValue,
     type: challenge.type as "daily" | "total",
     dailyTargets: challenge.dailyTargets as number[] | null,
+    noMax: challenge.noMax ?? false,
     clientNow,
   });
 
@@ -545,6 +546,7 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
     targetValue: challenge.targetValue,
     type: challenge.type as "daily" | "total",
     dailyTargets: challengeDailyTargets,
+    noMax: challenge.noMax ?? false,
     clientNow,
   });
 
@@ -596,6 +598,7 @@ router.get("/challenges/:id/progress", async (req, res): Promise<void> => {
     targetValue: challenge.targetValue,
     type: challenge.type as "daily" | "total",
     dailyTargets: challenge.dailyTargets as number[] | null,
+    noMax: challenge.noMax ?? false,
     clientNow,
   });
 
@@ -690,6 +693,7 @@ async function buildLeaderboard(challenge: typeof challengesTable.$inferSelect, 
         targetValue: challenge.targetValue,
         type: challenge.type as "daily" | "total",
         dailyTargets: challenge.dailyTargets as number[] | null,
+        noMax: challenge.noMax ?? false,
         clientNow,
       });
 

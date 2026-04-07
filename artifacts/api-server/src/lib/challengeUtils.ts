@@ -83,9 +83,13 @@ export function computeDailyProgress(
   startDate: Date,
   durationDays: number,
   targetValue: number,
-  dailyTargets?: number[] | null
+  dailyTargets?: number[] | null,
+  noMax?: boolean,
+  clientNow?: Date
 ): DayProgressItem[] {
   const start = startOfDay(startDate);
+  const todayDate = startOfDay(clientNow ?? new Date());
+  const todayStr = toDateString(todayDate);
 
   const days: DayProgressItem[] = [];
   for (let i = 0; i < durationDays; i++) {
@@ -112,6 +116,7 @@ export function computeDailyProgress(
     const logDate = toDateString(log.date);
     const primaryIdx = dayMap.get(logDate);
 
+    // 1. Fill today first (up to its target)
     if (primaryIdx !== undefined && days[primaryIdx].target > 0) {
       const dayCap = days[primaryIdx].target;
       const canFill = Math.max(0, dayCap - days[primaryIdx].logged);
@@ -120,6 +125,7 @@ export function computeDailyProgress(
       remaining -= fill;
     }
 
+    // 2. Backfill previous days (up to their targets)
     if (remaining > 0) {
       const logDayBound = logDate;
       for (let i = 0; i < durationDays; i++) {
@@ -135,11 +141,24 @@ export function computeDailyProgress(
         }
       }
     }
+
+    // 3. If noMax and still remaining, add extra to today
+    if (noMax && remaining > 0) {
+      const todayIdx = dayMap.get(todayStr);
+      if (todayIdx !== undefined && days[todayIdx].target > 0) {
+        days[todayIdx].logged += remaining;
+      }
+    }
   }
 
   for (const day of days) {
-    day.logged = Math.min(day.logged, day.target);
-    day.completed = day.logged >= day.target;
+    if (noMax && day.date === todayStr) {
+      // Never cap today when noMax — extra reps count
+      day.completed = day.logged >= day.target;
+    } else {
+      day.logged = Math.min(day.logged, day.target);
+      day.completed = day.logged >= day.target;
+    }
   }
 
   return days;
