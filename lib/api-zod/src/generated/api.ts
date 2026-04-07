@@ -205,6 +205,47 @@ export const CreateChallengeBody = zod.object({
 });
 
 /**
+ * @summary List active public challenges with leaderboards (no auth required)
+ */
+export const GetPublicChallengesResponseItem = zod.object({
+  challenge: zod.object({
+    id: zod.string(),
+    slug: zod.string(),
+    title: zod.string(),
+    activityType: zod.string(),
+    unit: zod.string(),
+    type: zod.enum(["daily", "total"]),
+    targetValue: zod.number(),
+    durationDays: zod.number(),
+    startDate: zod.coerce.date(),
+    createdById: zod.string(),
+    inviteCode: zod.string(),
+    createdAt: zod.coerce.date(),
+    state: zod.enum(["not_started", "active", "completed"]),
+    participantCount: zod.number().optional(),
+    dailyTargets: zod.array(zod.number()).nullish(),
+    randomizeReps: zod.boolean().optional(),
+    restDayEnabled: zod.boolean().optional(),
+    isPublic: zod.boolean().optional(),
+    noMax: zod.boolean().optional(),
+  }),
+  leaderboard: zod.array(
+    zod.object({
+      userId: zod.string(),
+      userName: zod.string(),
+      profileImageUrl: zod.string().nullable(),
+      totalLogged: zod.number(),
+      percentComplete: zod.number(),
+      rank: zod.number(),
+      streak: zod.number(),
+    }),
+  ),
+});
+export const GetPublicChallengesResponse = zod.array(
+  GetPublicChallengesResponseItem,
+);
+
+/**
  * @summary Get challenge details with progress (public; userProgress only returned for authenticated participants)
  */
 export const GetChallengeParams = zod.object({

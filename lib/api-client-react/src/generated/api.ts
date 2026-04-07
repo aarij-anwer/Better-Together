@@ -38,6 +38,7 @@ import type {
   MobileTokenExchangeRequest,
   MobileTokenExchangeSuccess,
   ProgressData,
+  PublicChallengeItem,
   UpdateProfileBody,
 } from "./api.schemas";
 
@@ -896,6 +897,81 @@ export const useCreateChallenge = <
 > => {
   return useMutation(getCreateChallengeMutationOptions(options));
 };
+
+/**
+ * @summary List active public challenges with leaderboards (no auth required)
+ */
+export const getGetPublicChallengesUrl = () => {
+  return `/api/challenges/public`;
+};
+
+export const getPublicChallenges = async (
+  options?: RequestInit,
+): Promise<PublicChallengeItem[]> => {
+  return customFetch<PublicChallengeItem[]>(getGetPublicChallengesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPublicChallengesQueryKey = () => {
+  return [`/api/challenges/public`] as const;
+};
+
+export const getGetPublicChallengesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPublicChallenges>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPublicChallenges>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPublicChallengesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getPublicChallenges>>
+  > = ({ signal }) => getPublicChallenges({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPublicChallenges>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPublicChallengesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPublicChallenges>>
+>;
+export type GetPublicChallengesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List active public challenges with leaderboards (no auth required)
+ */
+
+export function useGetPublicChallenges<
+  TData = Awaited<ReturnType<typeof getPublicChallenges>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPublicChallenges>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPublicChallengesQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Get challenge details with progress (public; userProgress only returned for authenticated participants)

@@ -284,6 +284,11 @@ export interface DashboardSummary {
   activeChallenges: number;
 }
 
+export interface PublicChallengeItem {
+  challenge: Challenge;
+  leaderboard: LeaderboardEntry[];
+}
+
 /**
  * Opaque session token — Bearer <sid>.
  */

@@ -37,4 +37,5 @@ export * from "./logProgressResponse";
 export * from "./mobileTokenExchangeRequest";
 export * from "./mobileTokenExchangeSuccess";
 export * from "./progressData";
+export * from "./publicChallengeItem";
 export * from "./updateProfileBody";

@@ -270,6 +270,50 @@ router.post("/challenges", async (req, res): Promise<void> => {
   });
 });
 
+router.get("/challenges/public", async (req, res): Promise<void> => {
+  const allPublic = await db
+    .select()
+    .from(challengesTable)
+    .where(eq(challengesTable.isPublic, true))
+    .orderBy(sql`${challengesTable.createdAt} desc`)
+    .limit(20);
+
+  const clientNow = getClientNow(req.headers["x-timezone-offset"] as string | undefined);
+
+  const active = allPublic.filter(
+    (c) => getChallengeState(c.startDate, c.durationDays, clientNow) === "active"
+  );
+  const showcased = active.slice(0, 3);
+
+  const result = await Promise.all(
+    showcased.map(async (challenge) => {
+      const state = getChallengeState(challenge.startDate, challenge.durationDays, clientNow);
+      const participantCount = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(participationsTable)
+        .where(eq(participationsTable.challengeId, challenge.id));
+
+      const leaderboard = await buildLeaderboard(challenge, clientNow);
+
+      return {
+        challenge: {
+          ...challenge,
+          startDate: challenge.startDate.toISOString(),
+          createdAt: challenge.createdAt.toISOString(),
+          state,
+          participantCount: participantCount[0]?.count ?? 0,
+          dailyTargets: challenge.dailyTargets,
+          randomizeReps: challenge.randomizeReps,
+          restDayEnabled: challenge.restDayEnabled,
+        },
+        leaderboard: leaderboard.slice(0, 5),
+      };
+    })
+  );
+
+  res.json(result);
+});
+
 router.get("/challenges/preview/:inviteCode", async (req, res): Promise<void> => {
   const raw = getParam(req.params, "inviteCode");
 

@@ -236,6 +236,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
 
+  /challenges/public:
+    get:
+      operationId: getPublicChallenges
+      tags: [challenges]
+      summary: List active public challenges with leaderboards (no auth required)
+      responses:
+        "200":
+          description: Up to 3 active public challenges, each with a top-5 leaderboard
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PublicChallengeItem"
+
   /challenges/{id}:
     get:
       operationId: getChallenge
@@ -895,3 +910,15 @@ components:
           type: integer
         activeChallenges:
           type: integer
+
+
+    PublicChallengeItem:
+      type: object
+      required: [challenge, leaderboard]
+      properties:
+        challenge:
+          $ref: "#/components/schemas/Challenge"
+        leaderboard:
+          type: array
+          items:
+            $ref: "#/components/schemas/LeaderboardEntry"
