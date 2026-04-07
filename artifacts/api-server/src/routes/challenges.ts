@@ -100,6 +100,7 @@ router.get("/challenges", async (req, res): Promise<void> => {
         targetValue: challenge.targetValue,
         type: challenge.type as "daily" | "total",
         dailyTargets: challenge.dailyTargets as number[] | null,
+        noMax: challenge.noMax ?? false,
         clientNow,
       });
 

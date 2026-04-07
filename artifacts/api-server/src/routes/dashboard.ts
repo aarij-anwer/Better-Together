@@ -59,7 +59,15 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
               eq(progressLogsTable.userId, userId)
             )
           );
-        const days = computeDailyProgress(logs, challenge.startDate, challenge.durationDays, challenge.targetValue);
+        const days = computeDailyProgress(
+          logs,
+          challenge.startDate,
+          challenge.durationDays,
+          challenge.targetValue,
+          challenge.dailyTargets as number[] | null,
+          challenge.noMax ?? false,
+          now,
+        );
         const todayDay = days.find((d) => d.date === todayStr);
         totalCompletedToday += todayDay?.logged ?? 0;
         if (todayDay?.completed) {
