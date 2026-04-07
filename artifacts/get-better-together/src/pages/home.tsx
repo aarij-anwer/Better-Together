@@ -38,7 +38,7 @@ const FEATURES = [
   },
 ];
 
-const RANK_COLORS = ["bg-yellow-500", "bg-gray-400", "bg-amber-700", "bg-primary", "bg-primary/70"];
+
 
 function Welcome({ onLogin }: { onLogin: () => void }) {
   const [, setLocation] = useLocation();
@@ -147,28 +147,22 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
                       <h3 className="font-black text-lg flex items-center gap-2 mb-5">
                         <Trophy className="w-5 h-5 text-primary" /> Leaderboard
                       </h3>
-                      <div className="space-y-4">
-                        {item.leaderboard.map((entry, idx) => (
+                      <div className="space-y-5">
+                        {item.leaderboard.map((entry) => (
                           <div key={entry.userId} className="flex items-center gap-3">
-                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white ${RANK_COLORS[idx] ?? "bg-primary/60"} shrink-0`}>
-                              {idx + 1}
-                            </div>
-                            <Avatar className="w-9 h-9 border-2 shadow-sm shrink-0">
+                            <Avatar className="w-10 h-10 border-2 shadow-sm shrink-0">
                               {entry.profileImageUrl
                                 ? <img src={entry.profileImageUrl} className="w-full h-full rounded-full object-cover" alt={entry.userName} />
-                                : <AvatarFallback className="bg-secondary font-bold text-xs">{entry.userName?.charAt(0) ?? "?"}</AvatarFallback>
+                                : <AvatarFallback className="bg-secondary font-bold text-sm">{entry.userName?.charAt(0) ?? "?"}</AvatarFallback>
                               }
                             </Avatar>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between mb-1">
-                                <span className="font-bold text-sm truncate">{entry.userName}</span>
-                                <span className="text-sm font-bold text-muted-foreground ml-2 shrink-0">{entry.totalLogged} {ch.unit}</span>
-                              </div>
-                              <Progress value={Math.min(100, entry.percentComplete)} className="h-1.5 rounded-full" />
+                              <div className="font-bold text-base truncate leading-none mb-1">{entry.userName}</div>
+                              <div className="text-sm font-semibold text-muted-foreground leading-none">{entry.totalLogged} {ch.unit}</div>
                             </div>
                             {entry.streak > 0 && (
-                              <div className="text-xs font-black text-orange-500 flex items-center bg-orange-100 px-1.5 py-0.5 rounded-md shrink-0">
-                                <Flame className="w-3 h-3 mr-0.5" /> {entry.streak}
+                              <div className="text-sm font-black text-orange-500 flex items-center bg-orange-100 px-2 py-0.5 rounded-md shrink-0">
+                                <Flame className="w-3 h-3 mr-1" /> {entry.streak}
                               </div>
                             )}
                           </div>
@@ -208,19 +202,15 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
               </Card>
               <Card className="p-6 rounded-[2rem] border shadow-sm bg-card/50">
                 <h3 className="font-black text-xl flex items-center gap-2 mb-6"><Trophy className="w-6 h-6 text-primary" /> Leaderboard</h3>
-                <div className="space-y-4">
-                  {DEMO_LEADERBOARD.map((p, idx) => (
+                <div className="space-y-5">
+                  {DEMO_LEADERBOARD.map((p) => (
                     <div key={p.name} className="flex items-center gap-3">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white ${RANK_COLORS[idx] ?? "bg-primary/60"} shrink-0`}>{idx + 1}</div>
-                      <Avatar className="w-9 h-9 border-2 shadow-sm shrink-0"><AvatarFallback className="bg-secondary font-bold text-xs">{p.initials}</AvatarFallback></Avatar>
+                      <Avatar className="w-10 h-10 border-2 shadow-sm shrink-0"><AvatarFallback className="bg-secondary font-bold text-sm">{p.initials}</AvatarFallback></Avatar>
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-bold text-sm truncate">{p.name}</span>
-                          <span className="text-sm font-bold text-muted-foreground ml-2 shrink-0">{p.logged} reps</span>
-                        </div>
-                        <Progress value={Math.round((p.logged / p.target) * 100)} className="h-1.5 rounded-full" />
+                        <div className="font-bold text-base truncate leading-none mb-1">{p.name}</div>
+                        <div className="text-sm font-semibold text-muted-foreground leading-none">{p.logged} reps</div>
                       </div>
-                      {p.streak > 0 && <div className="text-xs font-black text-orange-500 flex items-center bg-orange-100 px-1.5 py-0.5 rounded-md shrink-0"><Flame className="w-3 h-3 mr-0.5" /> {p.streak}</div>}
+                      {p.streak > 0 && <div className="text-sm font-black text-orange-500 flex items-center bg-orange-100 px-2 py-0.5 rounded-md shrink-0"><Flame className="w-3 h-3 mr-1" /> {p.streak}</div>}
                     </div>
                   ))}
                 </div>
