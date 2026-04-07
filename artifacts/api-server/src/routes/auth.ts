@@ -60,16 +60,36 @@ function getSafeReturnTo(value: unknown): string {
   return value;
 }
 
+function splitEmailName(email: string | null): { firstName: string | null; lastName: string | null } {
+  if (!email || !email.includes("@")) return { firstName: null, lastName: null };
+  const localPart = email.split("@")[0];
+  const parts = localPart
+    .replace(/[._-]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (parts.length === 0) return { firstName: null, lastName: null };
+  if (parts.length === 1) return { firstName: parts[0], lastName: null };
+  return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
+}
+
 async function upsertUser(claims: Record<string, unknown>) {
+  const firstName = typeof claims.first_name === "string" ? claims.first_name.trim() : "";
+  const lastName = typeof claims.last_name === "string" ? claims.last_name.trim() : "";
   const userData = {
     id: claims.sub as string,
     email: (claims.email as string) || null,
-    firstName: (claims.first_name as string) || null,
-    lastName: (claims.last_name as string) || null,
+    firstName: firstName || null,
+    lastName: lastName || null,
     profileImageUrl: (claims.profile_image_url || claims.picture) as
       | string
       | null,
   };
+
+  const [existing] = await db.select().from(usersTable).where(eq(usersTable.id, userData.id));
+  const fallbackName = splitEmailName(userData.email);
+  const resolvedFirstName = userData.firstName ?? existing?.firstName ?? fallbackName.firstName;
+  const resolvedLastName = userData.lastName ?? existing?.lastName ?? fallbackName.lastName;
 
   const [user] = await db
     .insert(usersTable)
@@ -78,6 +98,8 @@ async function upsertUser(claims: Record<string, unknown>) {
       target: usersTable.id,
       set: {
         email: userData.email,
+        firstName: existing?.firstName ?? resolvedFirstName,
+        lastName: existing?.lastName ?? resolvedLastName,
         profileImageUrl: userData.profileImageUrl,
         updatedAt: new Date(),
       },
