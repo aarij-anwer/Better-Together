@@ -105,8 +105,7 @@ export function notParticipatedReminderTemplate(params: {
     },
   };
   const tone = urgencyMap[params.reminderNumber] ?? urgencyMap[1];
-  const subject = `${tone.emoji.replace(/&#\d+;/, "")} Reminder: you haven't logged anything in "${params.challengeTitle}"`;
-  const subjectClean = `Reminder: you haven't logged anything in "${params.challengeTitle}"`;
+  const subject = `Reminder: you haven't logged anything in "${params.challengeTitle}"`;
   const html = baseTemplate(`
     <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:${DARK};">${tone.headline} ${tone.emoji}</h2>
     <p style="margin:0 0 20px;font-size:15px;color:${GRAY};line-height:1.6;">${greeting(params.firstName)}</p>
@@ -115,7 +114,7 @@ export function notParticipatedReminderTemplate(params: {
       ${ctaButton(params.challengeUrl, "Log your progress →")}
     </div>
   `);
-  return { subject: subjectClean, html };
+  return { subject, html };
 }
 
 export function challengeEndedTemplate(params: {
