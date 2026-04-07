@@ -125,16 +125,18 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
                             🏆 Leader: <span className="text-foreground font-black">{leader.userName}</span> with {leader.totalLogged} {ch.unit}
                           </p>
                         )}
-                        <div className="flex flex-col sm:flex-row gap-3 mt-2">
+                        <div className="flex flex-col sm:flex-row gap-3 mt-2 w-full sm:w-auto">
                           <Button
+                            size="lg"
                             variant="outline"
-                            className="rounded-xl font-bold border-2 w-full sm:w-44"
+                            className="h-14 rounded-2xl text-lg font-bold border-2 w-full sm:w-52"
                             onClick={() => setLocation(`/challenge/${ch.slug || ch.id}`)}
                           >
-                            View Challenge <ArrowRight className="w-4 h-4 ml-1" />
+                            View Challenge <ArrowRight className="w-5 h-5 ml-2" />
                           </Button>
                           <Button
-                            className="rounded-xl font-bold shadow-sm w-full sm:w-44"
+                            size="lg"
+                            className="h-14 rounded-2xl text-lg font-bold shadow-lg w-full sm:w-52"
                             onClick={onLogin}
                           >
                             Join & Compete
@@ -197,7 +199,14 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
                 <div className="flex flex-col items-center py-6">
                   <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Day 7 of 10 — Today's target: 30 reps</p>
                   <Progress value={73} className="h-4 w-full max-w-xs rounded-full mb-6" />
-                  <Button className="rounded-xl font-bold shadow-sm" onClick={onLogin}>Join & Compete</Button>
+                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                    <Button size="lg" className="h-14 w-full sm:w-52 rounded-2xl text-lg font-bold shadow-lg" onClick={() => setLocation("/challenge/demo-pushup-challenge")}>
+                      Try it now <ArrowRight className="w-5 h-5 ml-2" />
+                    </Button>
+                    <Button size="lg" variant="outline" className="h-14 w-full sm:w-52 rounded-2xl text-lg font-bold border-2" onClick={onLogin}>
+                      Sign in
+                    </Button>
+                  </div>
                 </div>
               </Card>
               <Card className="p-6 rounded-[2rem] border shadow-sm bg-card/50">
@@ -245,9 +254,14 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
         </div>
         <h2 className="text-4xl font-black tracking-tight mb-4">Ready to start your challenge?</h2>
         <p className="text-xl text-muted-foreground font-medium mb-8">Join thousands of people pushing themselves further, together.</p>
-        <Button size="lg" className="h-16 px-12 rounded-2xl text-xl font-bold shadow-lg" onClick={onLogin}>
-          Get started for free
-        </Button>
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-center">
+          <Button size="lg" className="h-14 w-full sm:w-52 rounded-2xl text-lg font-bold shadow-lg" onClick={() => setLocation("/challenge/demo-pushup-challenge")}>
+            Try it now <ArrowRight className="w-5 h-5 ml-2" />
+          </Button>
+          <Button size="lg" variant="outline" className="h-14 w-full sm:w-52 rounded-2xl text-lg font-bold border-2" onClick={onLogin}>
+            Sign in
+          </Button>
+        </div>
       </div>
     </div>
   );
