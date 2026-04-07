@@ -125,16 +125,16 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
                             🏆 Leader: <span className="text-foreground font-black">{leader.userName}</span> with {leader.totalLogged} {ch.unit}
                           </p>
                         )}
-                        <div className="flex gap-3 mt-2">
+                        <div className="flex flex-col sm:flex-row gap-3 mt-2">
                           <Button
                             variant="outline"
-                            className="rounded-xl font-bold border-2"
+                            className="rounded-xl font-bold border-2 w-full sm:w-44"
                             onClick={() => setLocation(`/challenge/${ch.slug || ch.id}`)}
                           >
                             View Challenge <ArrowRight className="w-4 h-4 ml-1" />
                           </Button>
                           <Button
-                            className="rounded-xl font-bold shadow-sm"
+                            className="rounded-xl font-bold shadow-sm w-full sm:w-44"
                             onClick={onLogin}
                           >
                             Join & Compete
