@@ -24,7 +24,7 @@ const schema = z.object({
   title: z.string().min(1, "Title is required").max(100),
   activityType: z.enum(ACTIVITY_TYPES),
   targetValue: z.coerce.number().min(1, "Must be at least 1"),
-  durationDays: z.coerce.number().min(1, "Must be at least 1").max(365),
+  durationDays: z.coerce.number().min(1, "Must be at least 1 day").max(365, "Cannot exceed 365 days"),
   startDate: z.date().optional(),
 });
 
@@ -159,7 +159,7 @@ export default function ChallengeNew() {
                     <FormItem>
                       <FormLabel className="text-base font-bold">Duration (days)</FormLabel>
                       <FormControl>
-                        <Input type="number" className="h-14 rounded-xl border-2 font-bold text-lg" {...field} />
+                        <Input type="number" min={1} max={365} className="h-14 rounded-xl border-2 font-bold text-lg" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
