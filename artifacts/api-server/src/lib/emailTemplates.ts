@@ -138,6 +138,30 @@ export function welcomeTemplate(params: {
   return { subject, html };
 }
 
+export function challengeJoinedTemplate(params: {
+  firstName: string | null;
+  challengeTitle: string;
+  challengeUrl: string;
+  durationDays: number;
+}): { subject: string; html: string } {
+  const subject = `You've joined "${params.challengeTitle}" — let's go!`;
+  const html = baseTemplate(`
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:${DARK};">You're in! &#128170;</h2>
+    <p style="margin:0 0 20px;font-size:15px;color:${GRAY};line-height:1.6;">${greeting(params.firstName)}</p>
+    <p style="margin:0 0 20px;font-size:15px;color:${DARK};line-height:1.6;">
+      You've successfully joined the <strong>${params.challengeTitle}</strong> challenge!
+      This is a <strong>${params.durationDays}-day</strong> challenge — time to show up and compete with your crew.
+    </p>
+    <p style="margin:0 0 4px;font-size:15px;color:${DARK};line-height:1.6;">
+      Head over to the challenge page to start logging your progress.
+    </p>
+    <div style="text-align:center;margin-top:8px;">
+      ${ctaButton(params.challengeUrl, "View your challenge →")}
+    </div>
+  `);
+  return { subject, html };
+}
+
 export function challengeEndedTemplate(params: {
   firstName: string | null;
   challengeTitle: string;

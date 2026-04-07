@@ -18,7 +18,7 @@ import {
 import { computeChallengeProgress, getCurrentDay } from "../lib/utils";
 import { generateDailyTargets } from "@workspace/shared";
 import { sendEmail, getAppUrl, isEmailEnabled } from "../lib/email";
-import { challengeStartedTemplate } from "../lib/emailTemplates";
+import { challengeStartedTemplate, challengeJoinedTemplate } from "../lib/emailTemplates";
 import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
@@ -377,6 +377,34 @@ router.post("/challenges/join/:inviteCode", async (req, res): Promise<void> => {
     userId: req.user.id,
     challengeId: challenge.id,
   });
+
+  void (async () => {
+    try {
+      if (!await isEmailEnabled()) return;
+      const [user] = await db
+        .select({ email: usersTable.email, firstName: usersTable.firstName })
+        .from(usersTable)
+        .where(eq(usersTable.id, req.user.id));
+      if (!user?.email) return;
+      const { subject, html } = challengeJoinedTemplate({
+        firstName: user.firstName,
+        challengeTitle: challenge.title,
+        challengeUrl: `${getAppUrl()}/challenge/${challenge.slug ?? challenge.id}`,
+        durationDays: challenge.durationDays,
+      });
+      const sent = await sendEmail(user.email, subject, html);
+      if (sent) {
+        await db.insert(notificationLogsTable).values({
+          userId: req.user.id,
+          challengeId: challenge.id,
+          type: "challenge_joined",
+          reminderNumber: 0,
+        }).onConflictDoNothing();
+      }
+    } catch (err) {
+      logger.error({ err }, "Failed to send challengeJoined email");
+    }
+  })();
 
   res.json({ challengeId: challenge.id, slug: challenge.slug, message: "Joined successfully" });
 });

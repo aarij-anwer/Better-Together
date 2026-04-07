@@ -6,6 +6,7 @@ export const notificationTypeEnum = pgEnum("notification_type", [
   "challenge_started",
   "not_participated_reminder",
   "challenge_ended",
+  "challenge_joined",
 ]);
 
 export type NotificationType = (typeof notificationTypeEnum.enumValues)[number];
