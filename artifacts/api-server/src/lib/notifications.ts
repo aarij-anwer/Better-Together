@@ -1,6 +1,5 @@
 import { db, challengesTable, participationsTable, progressLogsTable, usersTable, notificationLogsTable } from "@workspace/db";
 import { eq, and, count, inArray } from "drizzle-orm";
-import { getChallengeState } from "./challengeUtils";
 import { sendEmail, getAppUrl, isEmailEnabled } from "./email";
 import {
   challengeStartedTemplate,
@@ -70,11 +69,9 @@ export async function runNotifications(): Promise<NotificationSummary> {
     const endDate = new Date(startDate);
     endDate.setUTCDate(endDate.getUTCDate() + challenge.durationDays);
 
-    const state = getChallengeState(challenge.startDate, challenge.durationDays, todayUTC);
-
     const isStartDay = todayStr === startStr;
     const isLastDay = todayStr === toUTCDateString(new Date(endDate.getTime() - 86400_000));
-    const isActive = state === "active";
+    const isActive = todayUTC >= startDate && todayUTC < endDate;
 
     if (!isStartDay && !isLastDay && !isActive) continue;
 
