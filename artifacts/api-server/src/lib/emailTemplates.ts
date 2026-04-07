@@ -59,7 +59,6 @@ export function challengeStartedTemplate(params: {
   firstName: string | null;
   challengeTitle: string;
   challengeUrl: string;
-  activityType: string;
   durationDays: number;
 }): { subject: string; html: string } {
   const subject = `Your "${params.challengeTitle}" challenge has started!`;

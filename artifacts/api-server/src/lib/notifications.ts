@@ -69,7 +69,6 @@ export async function runNotifications(): Promise<NotificationSummary> {
 
     const endDate = new Date(startDate);
     endDate.setUTCDate(endDate.getUTCDate() + challenge.durationDays);
-    const endStr = toUTCDateString(endDate);
 
     const state = getChallengeState(challenge.startDate, challenge.durationDays, todayUTC);
 
@@ -123,7 +122,6 @@ export async function runNotifications(): Promise<NotificationSummary> {
             firstName: user.firstName,
             challengeTitle: challenge.title,
             challengeUrl,
-            activityType: challenge.activityType,
             durationDays: challenge.durationDays,
           });
 
@@ -133,7 +131,7 @@ export async function runNotifications(): Promise<NotificationSummary> {
               userId,
               challengeId: challenge.id,
               type: "challenge_started",
-              reminderNumber: null,
+              reminderNumber: 0,
             }).onConflictDoNothing();
             summary.challengeStarted++;
           } else {
@@ -168,7 +166,7 @@ export async function runNotifications(): Promise<NotificationSummary> {
               userId,
               challengeId: challenge.id,
               type: "challenge_ended",
-              reminderNumber: null,
+              reminderNumber: 0,
             }).onConflictDoNothing();
             summary.challengeEnded++;
           } else {

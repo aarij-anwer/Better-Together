@@ -33,7 +33,7 @@ app.listen(port, (err) => {
     } catch (err) {
       logger.error({ err }, "Scheduled notification job failed");
     }
-  });
+  }, { timezone: "UTC" });
 
   logger.info("Notification cron job scheduled (daily at 09:00 UTC)");
 });

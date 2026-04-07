@@ -17,7 +17,7 @@ export const notificationLogsTable = pgTable(
     userId: text("user_id").notNull().references(() => usersTable.id),
     challengeId: text("challenge_id").notNull().references(() => challengesTable.id),
     type: notificationTypeEnum("type").notNull(),
-    reminderNumber: integer("reminder_number"),
+    reminderNumber: integer("reminder_number").notNull().default(0),
     sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
