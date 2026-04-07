@@ -88,18 +88,22 @@ async function upsertUser(claims: Record<string, unknown>) {
 
   const [existing] = await db.select().from(usersTable).where(eq(usersTable.id, userData.id));
   const fallbackName = splitEmailName(userData.email);
-  const resolvedFirstName = userData.firstName ?? existing?.firstName ?? fallbackName.firstName;
-  const resolvedLastName = userData.lastName ?? existing?.lastName ?? fallbackName.lastName;
+  const resolvedFirstName = existing?.firstName ?? userData.firstName ?? fallbackName.firstName;
+  const resolvedLastName = existing?.lastName ?? userData.lastName ?? fallbackName.lastName;
 
   const [user] = await db
     .insert(usersTable)
-    .values(userData)
+    .values({
+      ...userData,
+      firstName: resolvedFirstName,
+      lastName: resolvedLastName,
+    })
     .onConflictDoUpdate({
       target: usersTable.id,
       set: {
         email: userData.email,
-        firstName: existing?.firstName ?? resolvedFirstName,
-        lastName: existing?.lastName ?? resolvedLastName,
+        firstName: resolvedFirstName,
+        lastName: resolvedLastName,
         profileImageUrl: userData.profileImageUrl,
         updatedAt: new Date(),
       },
