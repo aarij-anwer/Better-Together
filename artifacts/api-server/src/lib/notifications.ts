@@ -40,8 +40,8 @@ export async function runNotifications(): Promise<NotificationSummary> {
     errors: 0,
   };
 
-  if (!isEmailEnabled()) {
-    logger.warn("RESEND_API_KEY is not set — skipping notification run");
+  if (!await isEmailEnabled()) {
+    logger.warn("Resend not configured — skipping notification run");
     return summary;
   }
 

@@ -1,17 +1,42 @@
 import { Resend } from "resend";
 import { logger } from "./logger";
 
-let resendClient: Resend | null = null;
+async function getCredentials(): Promise<{ apiKey: string; fromEmail: string }> {
+  const hostname = process.env["REPLIT_CONNECTORS_HOSTNAME"];
+  const xReplitToken = process.env["REPL_IDENTITY"]
+    ? "repl " + process.env["REPL_IDENTITY"]
+    : process.env["WEB_REPL_RENEWAL"]
+    ? "depl " + process.env["WEB_REPL_RENEWAL"]
+    : null;
 
-function getResend(): Resend {
-  if (!resendClient) {
-    const apiKey = process.env["RESEND_API_KEY"];
-    if (!apiKey) {
-      throw new Error("RESEND_API_KEY is not set. Configure the Resend integration to send emails.");
+  if (hostname && xReplitToken) {
+    const data = await fetch(
+      "https://" + hostname + "/api/v2/connection?include_secrets=true&connector_names=resend",
+      {
+        headers: {
+          Accept: "application/json",
+          "X-Replit-Token": xReplitToken,
+        },
+      },
+    ).then((res) => res.json()).then((d: any) => d.items?.[0]);
+
+    if (data?.settings?.api_key) {
+      return {
+        apiKey: data.settings.api_key,
+        fromEmail: data.settings.from_email ?? "Get Better Together <onboarding@resend.dev>",
+      };
     }
-    resendClient = new Resend(apiKey);
   }
-  return resendClient;
+
+  const envKey = process.env["RESEND_API_KEY"];
+  if (envKey) {
+    return {
+      apiKey: envKey,
+      fromEmail: process.env["RESEND_FROM_EMAIL"] ?? "Get Better Together <onboarding@resend.dev>",
+    };
+  }
+
+  throw new Error("Resend not connected — set up the Resend integration or provide RESEND_API_KEY.");
 }
 
 export function getAppUrl(): string {
@@ -20,15 +45,11 @@ export function getAppUrl(): string {
   return "https://getbettertogether.app";
 }
 
-export function getFromEmail(): string {
-  return process.env["RESEND_FROM_EMAIL"] ?? "Get Better Together <noreply@getbettertogether.app>";
-}
-
 export async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
-  const from = getFromEmail();
   try {
-    const resend = getResend();
-    const { error } = await resend.emails.send({ from, to, subject, html });
+    const { apiKey, fromEmail } = await getCredentials();
+    const resend = new Resend(apiKey);
+    const { error } = await resend.emails.send({ from: fromEmail, to, subject, html });
     if (error) {
       logger.error({ error, to, subject }, "Resend returned an error");
       return false;
@@ -41,6 +62,11 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
   }
 }
 
-export function isEmailEnabled(): boolean {
-  return Boolean(process.env["RESEND_API_KEY"]);
+export async function isEmailEnabled(): Promise<boolean> {
+  try {
+    await getCredentials();
+    return true;
+  } catch {
+    return false;
+  }
 }

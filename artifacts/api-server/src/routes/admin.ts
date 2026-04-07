@@ -11,10 +11,10 @@ router.post("/admin/notifications/run", async (req: Request, res: Response): Pro
     return;
   }
 
-  if (!isEmailEnabled()) {
+  if (!await isEmailEnabled()) {
     res.status(503).json({
       error: "Email not configured",
-      message: "RESEND_API_KEY is not set. Connect the Resend integration to enable email notifications.",
+      message: "Connect the Resend integration to enable email notifications.",
     });
     return;
   }
