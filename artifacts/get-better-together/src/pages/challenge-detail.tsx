@@ -85,6 +85,28 @@ export default function ChallengeDetail() {
     return d.date === todayStr;
   }) ?? -1;
 
+  const claimAttempted = useRef(false);
+  useEffect(() => {
+    if (!user || !guestId || !id || claimAttempted.current) return;
+    claimAttempted.current = true;
+    fetch(`/api/challenges/${encodeURIComponent(id)}/claim-guest`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ guestId }),
+    })
+      .then((r) => r.json())
+      .then((result) => {
+        if (result.success) {
+          try { localStorage.removeItem(`gbt_guest_${id}`); } catch {}
+          setGuestId(null);
+          queryClient.invalidateQueries();
+          toast.success("Your guest progress has been saved to your account!");
+        }
+      })
+      .catch(() => {});
+  }, [user, guestId, id, queryClient]);
+
   useEffect(() => {
     if (todayDayIdx >= 0 && !hasScrolledToToday.current) {
       hasScrolledToToday.current = true;
@@ -244,7 +266,7 @@ export default function ChallengeDetail() {
                 <Share className="w-4 h-4 mr-2" /> Invite
               </Button>
             ) : (
-              <Button onClick={login} variant="outline" className={`rounded-xl h-11 border-2 font-bold bg-card text-primary border-primary/20 hover:bg-primary/5 ${streak <= 0 ? 'col-span-2' : ''}`}>
+              <Button onClick={() => login(`/challenge/${id}`)} variant="outline" className={`rounded-xl h-11 border-2 font-bold bg-card text-primary border-primary/20 hover:bg-primary/5 ${streak <= 0 ? 'col-span-2' : ''}`}>
                 <UserPlus className="w-4 h-4 mr-2" /> Sign up to save progress
               </Button>
             )}

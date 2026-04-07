@@ -577,6 +577,70 @@ router.post("/challenges/:id/guest-log", async (req, res): Promise<void> => {
   });
 });
 
+router.post("/challenges/:id/claim-guest", async (req, res): Promise<void> => {
+  if (!req.isAuthenticated()) {
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  const slugOrId = getParam(req.params, "id");
+  const challenge = await findChallengeBySlugOrId(slugOrId);
+  if (!challenge) {
+    res.status(404).json({ error: "Challenge not found" });
+    return;
+  }
+
+  const guestId = req.body?.guestId;
+  if (!guestId || typeof guestId !== "string") {
+    res.status(400).json({ error: "guestId is required" });
+    return;
+  }
+
+  const [guestUser] = await db.select().from(usersTable).where(eq(usersTable.id, guestId));
+  if (!guestUser || !guestUser.isAnonymous) {
+    res.status(400).json({ error: "Invalid guest user" });
+    return;
+  }
+
+  const guestParticipation = await requireParticipant(guestId, challenge.id);
+  if (!guestParticipation) {
+    res.status(400).json({ error: "Guest is not a participant in this challenge" });
+    return;
+  }
+
+  const authUserId = req.user.id;
+
+  const existingParticipation = await requireParticipant(authUserId, challenge.id);
+  if (existingParticipation) {
+    await db.update(progressLogsTable)
+      .set({ userId: authUserId })
+      .where(and(eq(progressLogsTable.challengeId, challenge.id), eq(progressLogsTable.userId, guestId)));
+    await db.delete(participationsTable)
+      .where(and(eq(participationsTable.challengeId, challenge.id), eq(participationsTable.userId, guestId)));
+  } else {
+    await db.update(participationsTable)
+      .set({ userId: authUserId })
+      .where(and(eq(participationsTable.challengeId, challenge.id), eq(participationsTable.userId, guestId)));
+    await db.update(progressLogsTable)
+      .set({ userId: authUserId })
+      .where(and(eq(progressLogsTable.challengeId, challenge.id), eq(progressLogsTable.userId, guestId)));
+  }
+
+  if (guestUser.firstName && guestUser.firstName.trim()) {
+    const [authUser] = await db.select().from(usersTable).where(eq(usersTable.id, authUserId));
+    if (!authUser?.firstName || !authUser.firstName.trim()) {
+      await db.update(usersTable).set({ firstName: guestUser.firstName }).where(eq(usersTable.id, authUserId));
+    }
+  }
+
+  const otherParticipations = await db.select().from(participationsTable).where(eq(participationsTable.userId, guestId));
+  if (otherParticipations.length === 0) {
+    await db.delete(usersTable).where(eq(usersTable.id, guestId));
+  }
+
+  res.json({ success: true });
+});
+
 router.get("/challenges/:id", async (req, res): Promise<void> => {
   const slugOrId = getParam(req.params, "id");
 
