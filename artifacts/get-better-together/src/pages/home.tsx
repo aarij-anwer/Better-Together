@@ -5,8 +5,8 @@ import { useListChallenges, useJoinChallenge, getGetDashboardSummaryQueryKey, ge
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Plus, Trophy, Activity, Clock, ArrowRight, Flame, Users, Zap, Target, CheckCircle, Link2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Plus, Trophy, Activity, Clock, ArrowRight, Link2, Flame, Users, Zap, CheckCircle, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatActivityName } from "@/lib/constants";
@@ -38,15 +38,7 @@ const FEATURES = [
   },
 ];
 
-function Welcome({ onLogin, onCodeSubmit }: { onLogin: () => void; onCodeSubmit: (code: string) => void }) {
-  const [inviteInput, setInviteInput] = useState("");
-
-  const handleInviteGo = () => {
-    const code = inviteInput.trim();
-    if (!code) return;
-    onCodeSubmit(code);
-  };
-
+function Welcome({ onLogin }: { onLogin: () => void }) {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero */}
@@ -61,42 +53,9 @@ function Welcome({ onLogin, onCodeSubmit }: { onLogin: () => void; onCodeSubmit:
           <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-5 text-foreground">
             Get Better <span className="text-primary">Together</span>
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-xl leading-relaxed font-medium">
+          <p className="text-xl md:text-2xl text-muted-foreground max-w-xl leading-relaxed font-medium">
             Create fitness challenges, invite friends, log daily progress, and race to the top of the leaderboard.
           </p>
-
-          {/* Invite code input */}
-          <div className="w-full max-w-md mb-6">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="Have an invite code? Enter it here"
-                  className="h-14 rounded-2xl pl-10 border-2 font-medium text-base"
-                  value={inviteInput}
-                  onChange={e => setInviteInput(e.target.value)}
-                  onKeyDown={e => { if (e.key === 'Enter') handleInviteGo(); }}
-                />
-              </div>
-              <Button
-                onClick={handleInviteGo}
-                disabled={!inviteInput.trim()}
-                className="h-14 rounded-2xl px-6 font-bold text-base"
-              >
-                Go
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-4 mb-4">
-            <div className="h-px bg-border flex-1 max-w-[80px]" />
-            <span className="text-sm text-muted-foreground font-semibold">or</span>
-            <div className="h-px bg-border flex-1 max-w-[80px]" />
-          </div>
-
-          <Button size="lg" className="h-14 px-10 rounded-2xl text-lg font-bold shadow-lg" onClick={onLogin}>
-            Sign in to get started
-          </Button>
         </div>
       </div>
 
@@ -332,14 +291,7 @@ function Dashboard() {
 
 export default function Home() {
   const { user, login } = useAuth();
-  const [, setLocation] = useLocation();
 
-  const handleCodeSubmit = (code: string) => {
-    // Support full URLs like https://…/join/ABCD1234 or raw codes
-    const inviteCode = code.includes("/join/") ? code.split("/join/").pop()!.trim() : code.trim();
-    if (inviteCode) setLocation(`/join/${inviteCode}`);
-  };
-
-  if (!user) return <Welcome onLogin={login} onCodeSubmit={handleCodeSubmit} />;
+  if (!user) return <Welcome onLogin={login} />;
   return <Dashboard />;
 }
