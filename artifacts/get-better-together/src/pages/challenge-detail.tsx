@@ -1,10 +1,11 @@
 import { useRef, useEffect, useCallback } from "react";
 import { useLocation, useRoute } from "wouter";
+import { useAuth } from "@workspace/replit-auth-web";
 import { useGetChallenge, useLogProgress, getGetChallengeQueryKey, getGetProgressQueryKey, getListChallengesQueryKey, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Activity, Trophy, Clock, Users, ArrowRight, Share, CheckCircle2, Flame, CalendarDays } from "lucide-react";
+import { Activity, Trophy, Clock, Users, ArrowRight, Share, CheckCircle2, Flame, CalendarDays, LogIn } from "lucide-react";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
@@ -19,6 +20,7 @@ export default function ChallengeDetail() {
   const [, params] = useRoute('/challenge/:id');
   const id = params?.id;
   const [, setLocation] = useLocation();
+  const { user, login } = useAuth();
   const queryClient = useQueryClient();
   const logMutation = useLogProgress();
   const [customVal, setCustomVal] = useState("");
@@ -68,10 +70,17 @@ export default function ChallengeDetail() {
     </Layout>
   );
 
-  const { challenge, userProgress, leaderboard, streak } = data;
+  const { challenge, leaderboard } = data;
+  // userProgress is null when the viewer is not an authenticated participant
+  const userProgress = data.userProgress as {
+    totalLogged: number; totalTarget: number; todayLogged: number; todayTarget: number;
+    streak: number; days?: Array<{ date: string; logged: number; target: number; completed: boolean }>;
+  } | null;
+  const streak = (userProgress?.streak as number) ?? (data.streak as number) ?? 0;
+  const isParticipant = userProgress !== null;
 
   const handleLog = (value: number) => {
-    if (challenge.state === 'not_started') return;
+    if (challenge.state === 'not_started' || !userProgress) return;
     const previousTotal = userProgress.totalLogged;
     const target = userProgress.totalTarget;
     const wasAlreadyComplete = target > 0 && previousTotal >= target;
@@ -131,7 +140,7 @@ export default function ChallengeDetail() {
 
   const isCompleted = challenge.state === 'completed';
   const isNotStarted = challenge.state === 'not_started';
-  const hasLogs = userProgress.totalLogged > 0;
+  const hasLogs = (userProgress?.totalLogged ?? 0) > 0;
 
   const todayStr = (() => {
     const now = new Date();
@@ -139,10 +148,10 @@ export default function ChallengeDetail() {
   })();
 
   const viewIdx = selectedDayIdx ?? todayDayIdx;
-  const viewDay = userProgress.days && viewIdx >= 0 ? userProgress.days[viewIdx] : null;
+  const viewDay = userProgress?.days && viewIdx >= 0 ? userProgress.days[viewIdx] : null;
   const isViewingRestDay = viewDay != null && viewDay.target === 0;
-  const isTodayRestDay = userProgress.todayTarget === 0;
-  const displayTarget = viewDay?.target ?? (challenge.dailyTargets ? challenge.dailyTargets[0] : userProgress.todayTarget);
+  const isTodayRestDay = (userProgress?.todayTarget ?? 1) === 0;
+  const displayTarget = viewDay?.target ?? (challenge.dailyTargets ? challenge.dailyTargets[0] : (userProgress?.todayTarget ?? 0));
   const [unitSmall, unitLarge] = getQuickLogValues(challenge.unit);
   const todayTarget = displayTarget || 0;
   const [quickLogSmall, quickLogLarge] = todayTarget > 0 && todayTarget < 20
@@ -199,7 +208,39 @@ export default function ChallengeDetail() {
         <div className="grid md:grid-cols-[1fr_340px] gap-6 min-w-0">
            <div className="space-y-6 min-w-0">
               <Card className="p-6 md:p-10 rounded-[2rem] border shadow-sm flex flex-col items-center overflow-hidden">
-                {challenge.type === 'daily' ? (
+                {!isParticipant ? (
+                  <div className="w-full flex flex-col items-center py-6 text-center">
+                    <div className="w-20 h-20 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mb-6">
+                      <LogIn className="w-10 h-10 text-primary" />
+                    </div>
+                    <h3 className="text-2xl font-black tracking-tight mb-3">
+                      {user ? "Join this challenge" : "Sign in to participate"}
+                    </h3>
+                    <p className="text-muted-foreground font-medium mb-8 max-w-xs">
+                      {user
+                        ? "Join to track your progress and compete on the leaderboard."
+                        : "Create an account to log your daily progress and compete with friends."}
+                    </p>
+                    {user ? (
+                      <Button
+                        size="lg"
+                        className="rounded-2xl h-14 px-10 text-lg font-bold shadow-md"
+                        onClick={() => setLocation(`/join/${challenge.inviteCode}`)}
+                      >
+                        Join Challenge
+                      </Button>
+                    ) : (
+                      <Button
+                        size="lg"
+                        className="rounded-2xl h-14 px-10 text-lg font-bold shadow-md"
+                        onClick={() => login(window.location.pathname)}
+                      >
+                        <LogIn className="w-5 h-5 mr-2" />
+                        Sign in to join
+                      </Button>
+                    )}
+                  </div>
+                ) : challenge.type === 'daily' ? (
                   <>
                     <h3 className="font-bold text-lg text-muted-foreground uppercase tracking-widest mb-8">
                       {viewDay && viewDay.date !== todayStr
@@ -239,14 +280,14 @@ export default function ChallengeDetail() {
                   </div>
                 )}
 
-                {!isNotStarted && !hasLogs && (
+                {isParticipant && !isNotStarted && !hasLogs && (
                   <div className="w-full bg-primary/5 border-2 border-primary/10 rounded-2xl p-6 text-center mb-6">
                     <h4 className="font-black text-lg mb-2 text-primary">Ready to start?</h4>
                     <p className="text-muted-foreground font-medium">Log your first activity below to get going!</p>
                   </div>
                 )}
 
-                {!isNotStarted && !isTodayRestDay && (
+                {isParticipant && !isNotStarted && !isTodayRestDay && (
                   <div className="w-full border-t pt-8">
                     <h4 className="font-black text-xl mb-6 text-center">Log Activity</h4>
                     <div className="flex gap-3 justify-center mb-6 max-w-[340px] mx-auto">
@@ -274,7 +315,7 @@ export default function ChallengeDetail() {
                 )}
               </Card>
 
-              {challenge.type === 'daily' && userProgress.days && (
+              {challenge.type === 'daily' && userProgress?.days && (
                 <Card id="day-progress" className="p-6 rounded-[2rem] border shadow-sm scroll-mt-4">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="font-bold text-lg uppercase tracking-wider text-muted-foreground">Day Progress</h3>
@@ -359,7 +400,7 @@ export default function ChallengeDetail() {
             </DialogHeader>
             <ul className="flex-1 overflow-y-auto px-6 pt-2 pb-2 space-y-2" role="list">
               {challenge.dailyTargets.map((target, idx) => {
-                const progressDay = userProgress.days?.[idx];
+                const progressDay = userProgress?.days?.[idx];
                 let dayDate: Date;
                 let dateStr: string;
                 if (progressDay?.date) {

@@ -19,8 +19,8 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/profile">{() => <AuthGuard><Profile /></AuthGuard>}</Route>
       <Route path="/challenge/new">{() => <AuthGuard><ChallengeNew /></AuthGuard>}</Route>
-      <Route path="/challenge/:id">{() => <AuthGuard><ChallengeDetail /></AuthGuard>}</Route>
-      <Route path="/challenge/:id/leaderboard">{() => <AuthGuard><ChallengeLeaderboard /></AuthGuard>}</Route>
+      <Route path="/challenge/:id" component={ChallengeDetail} />
+      <Route path="/challenge/:id/leaderboard" component={ChallengeLeaderboard} />
       <Route path="/join/:inviteCode" component={ChallengeJoin} />
       <Route component={NotFound} />
     </Switch>

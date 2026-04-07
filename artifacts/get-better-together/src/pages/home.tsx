@@ -6,34 +6,210 @@ import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Trophy, Activity, Clock, ArrowRight, Link2 } from "lucide-react";
+import { Plus, Trophy, Activity, Clock, ArrowRight, Link2, Flame, Users, Zap, CheckCircle, Target } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { formatActivityName } from "@/lib/constants";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 
-function Welcome({ onLogin }: { onLogin: () => void }) {
+const DEMO_LEADERBOARD = [
+  { name: "Alex K.", initials: "AK", logged: 280, target: 300, streak: 7, color: "bg-yellow-500" },
+  { name: "Jamie L.", initials: "JL", logged: 255, target: 300, streak: 5, color: "bg-gray-400" },
+  { name: "Morgan R.", initials: "MR", logged: 210, target: 300, streak: 3, color: "bg-amber-600" },
+  { name: "Sam T.", initials: "ST", logged: 160, target: 300, streak: 2, color: "bg-primary" },
+];
+
+const FEATURES = [
+  {
+    icon: Target,
+    title: "Daily Targets",
+    desc: "Challenging but achievable goals for every day of your challenge, with smart rest days built in.",
+  },
+  {
+    icon: Users,
+    title: "Compete with Friends",
+    desc: "Live leaderboards with streaks and progress bars keep everyone accountable and motivated.",
+  },
+  {
+    icon: Zap,
+    title: "Instant Logging",
+    desc: "Log your reps, km, or pages in two taps. No friction between you and the next best version of you.",
+  },
+];
+
+function Welcome({ onLogin, onCodeSubmit }: { onLogin: () => void; onCodeSubmit: (code: string) => void }) {
+  const [inviteInput, setInviteInput] = useState("");
+
+  const handleInviteGo = () => {
+    const code = inviteInput.trim();
+    if (!code) return;
+    onCodeSubmit(code);
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">
-      <div className="flex-1 flex flex-col items-center justify-center px-4 relative overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img src="/hero-bg.png" alt="" className="w-full h-full object-cover opacity-90 mix-blend-multiply" />
+    <div className="min-h-screen bg-background">
+      {/* Hero */}
+      <div className="relative overflow-hidden">
+        <div className="absolute inset-0 z-0 pointer-events-none">
+          <img src="/hero-bg.png" alt="" className="w-full h-full object-cover opacity-60 mix-blend-multiply" />
         </div>
-        <div className="relative z-10 max-w-lg w-full bg-white/90 backdrop-blur-2xl p-10 rounded-[2rem] border border-white/40 shadow-2xl text-center">
-           <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-sm">
-             <Activity className="w-8 h-8 text-primary-foreground" />
-           </div>
-           <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-4 text-foreground">Get Better Together</h1>
-           <p className="text-lg md:text-xl text-muted-foreground mb-10 leading-relaxed font-medium">
-             Train together. Compete a little. Improve a lot.
-           </p>
-           <Button size="lg" className="w-full text-xl h-16 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all" onClick={onLogin}>
-             Sign in to begin
-           </Button>
+        <div className="relative z-10 max-w-5xl mx-auto px-6 py-20 md:py-28 flex flex-col items-center text-center">
+          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+            <Activity className="w-8 h-8 text-primary-foreground" />
+          </div>
+          <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-5 text-foreground">
+            Get Better <span className="text-primary">Together</span>
+          </h1>
+          <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-xl leading-relaxed font-medium">
+            Create fitness challenges, invite friends, log daily progress, and race to the top of the leaderboard.
+          </p>
+
+          {/* Invite code input */}
+          <div className="w-full max-w-md mb-6">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Have an invite code? Enter it here"
+                  className="h-14 rounded-2xl pl-10 border-2 font-medium text-base"
+                  value={inviteInput}
+                  onChange={e => setInviteInput(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleInviteGo(); }}
+                />
+              </div>
+              <Button
+                onClick={handleInviteGo}
+                disabled={!inviteInput.trim()}
+                className="h-14 rounded-2xl px-6 font-bold text-base"
+              >
+                Go
+              </Button>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4 mb-4">
+            <div className="h-px bg-border flex-1 max-w-[80px]" />
+            <span className="text-sm text-muted-foreground font-semibold">or</span>
+            <div className="h-px bg-border flex-1 max-w-[80px]" />
+          </div>
+
+          <Button size="lg" className="h-14 px-10 rounded-2xl text-lg font-bold shadow-lg" onClick={onLogin}>
+            Sign in to get started
+          </Button>
         </div>
       </div>
+
+      {/* Demo challenge + leaderboard */}
+      <div className="max-w-5xl mx-auto px-6 py-16">
+        <h2 className="text-3xl font-black tracking-tight text-center mb-3">See it in action</h2>
+        <p className="text-center text-muted-foreground font-medium mb-10 text-lg">Here's what a live 10-Day Pushup Challenge looks like</p>
+
+        <div className="grid md:grid-cols-[1fr_320px] gap-6">
+          {/* Sample challenge card */}
+          <Card className="p-6 md:p-8 rounded-[2rem] border shadow-sm">
+            <div className="flex items-start justify-between mb-6">
+              <div>
+                <h3 className="text-2xl font-black tracking-tight mb-2">10-Day Pushup Challenge</h3>
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground font-semibold">
+                  <span className="flex items-center gap-1.5 bg-secondary px-3 py-1.5 rounded-lg">
+                    <Activity className="w-4 h-4" /> Pushups
+                  </span>
+                  <span className="flex items-center gap-1.5 bg-secondary px-3 py-1.5 rounded-lg">
+                    <Clock className="w-4 h-4" /> 10 days
+                  </span>
+                  <span className="flex items-center gap-1.5 bg-secondary px-3 py-1.5 rounded-lg">
+                    <Users className="w-4 h-4" /> 4 participants
+                  </span>
+                </div>
+              </div>
+              <span className="text-xs font-bold px-3 py-1.5 rounded-lg bg-green-100 text-green-800 shrink-0">Active</span>
+            </div>
+
+            <div className="flex flex-col items-center py-6">
+              <p className="text-sm font-bold text-muted-foreground uppercase tracking-widest mb-4">Day 7 of 10 — Today's Target</p>
+              <div className="text-6xl font-black tracking-tight mb-2">22 <span className="text-3xl text-muted-foreground font-semibold">/ 30</span></div>
+              <div className="text-lg text-muted-foreground font-bold uppercase tracking-wider mb-6">reps</div>
+              <Progress value={73} className="h-4 w-full max-w-xs rounded-full mb-6" />
+              <div className="flex gap-4 justify-center w-full max-w-xs">
+                <div className="flex-1 h-14 rounded-2xl border-2 bg-secondary/50 flex items-center justify-center text-xl font-black text-muted-foreground">+5 reps</div>
+                <div className="flex-1 h-14 rounded-2xl border-2 bg-secondary/50 flex items-center justify-center text-xl font-black text-muted-foreground">+10 reps</div>
+              </div>
+              <p className="text-sm text-muted-foreground font-medium mt-4">Sign in to log your activity</p>
+            </div>
+          </Card>
+
+          {/* Sample leaderboard */}
+          <Card className="p-6 rounded-[2rem] border shadow-sm bg-card/50">
+            <h3 className="font-black text-xl flex items-center gap-2 mb-6">
+              <Trophy className="w-6 h-6 text-primary" /> Leaderboard
+            </h3>
+            <div className="space-y-4">
+              {DEMO_LEADERBOARD.map((p, idx) => (
+                <div key={p.name} className="flex items-center gap-3">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black text-white ${p.color} shrink-0`}>
+                    {idx + 1}
+                  </div>
+                  <Avatar className="w-9 h-9 border-2 shadow-sm shrink-0">
+                    <AvatarFallback className="bg-secondary font-bold text-xs">{p.initials}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold text-sm truncate">{p.name}</span>
+                      <span className="text-sm font-bold text-muted-foreground ml-2 shrink-0">{p.logged} reps</span>
+                    </div>
+                    <Progress value={Math.round((p.logged / p.target) * 100)} className="h-1.5 rounded-full" />
+                  </div>
+                  {p.streak > 0 && (
+                    <div className="text-xs font-black text-orange-500 flex items-center bg-orange-100 px-1.5 py-0.5 rounded-md shrink-0">
+                      <Flame className="w-3 h-3 mr-0.5" /> {p.streak}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+            <Button
+              variant="outline"
+              className="w-full mt-6 rounded-xl font-bold border-2"
+              onClick={onLogin}
+            >
+              Join this type of challenge <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </Card>
+        </div>
+      </div>
+
+      {/* Feature row */}
+      <div className="bg-secondary/30 border-y">
+        <div className="max-w-5xl mx-auto px-6 py-16">
+          <div className="grid md:grid-cols-3 gap-8">
+            {FEATURES.map(f => (
+              <div key={f.title} className="flex flex-col items-start">
+                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center mb-4">
+                  <f.icon className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-black text-xl mb-2">{f.title}</h3>
+                <p className="text-muted-foreground font-medium leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom CTA */}
+      <div className="max-w-5xl mx-auto px-6 py-20 text-center">
+        <div className="flex items-center justify-center gap-2 mb-4">
+          <CheckCircle className="w-5 h-5 text-green-500" />
+          <span className="font-semibold text-muted-foreground">Free to use · No credit card needed</span>
+        </div>
+        <h2 className="text-4xl font-black tracking-tight mb-4">Ready to start your challenge?</h2>
+        <p className="text-xl text-muted-foreground font-medium mb-8">Join thousands of people pushing themselves further, together.</p>
+        <Button size="lg" className="h-16 px-12 rounded-2xl text-xl font-bold shadow-lg" onClick={onLogin}>
+          Get started for free
+        </Button>
+      </div>
     </div>
-  )
+  );
 }
 
 function Dashboard() {
@@ -156,7 +332,14 @@ function Dashboard() {
 
 export default function Home() {
   const { user, login } = useAuth();
+  const [, setLocation] = useLocation();
 
-  if (!user) return <Welcome onLogin={login} />;
+  const handleCodeSubmit = (code: string) => {
+    // Support full URLs like https://…/join/ABCD1234 or raw codes
+    const inviteCode = code.includes("/join/") ? code.split("/join/").pop()!.trim() : code.trim();
+    if (inviteCode) setLocation(`/join/${inviteCode}`);
+  };
+
+  if (!user) return <Welcome onLogin={login} onCodeSubmit={handleCodeSubmit} />;
   return <Dashboard />;
 }

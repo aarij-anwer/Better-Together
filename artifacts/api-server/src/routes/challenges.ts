@@ -374,22 +374,11 @@ router.post("/challenges/:id/leave", async (req, res): Promise<void> => {
 });
 
 router.get("/challenges/:id", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-
   const slugOrId = getParam(req.params, "id");
 
   const challenge = await findChallengeBySlugOrId(slugOrId);
   if (!challenge) {
     res.status(404).json({ error: "Challenge not found" });
-    return;
-  }
-
-  const participation = await requireParticipant(req.user.id, challenge.id);
-  if (!participation) {
-    res.status(403).json({ error: "Not a participant" });
     return;
   }
 
@@ -401,33 +390,50 @@ router.get("/challenges/:id", async (req, res): Promise<void> => {
     .from(participationsTable)
     .where(eq(participationsTable.challengeId, challenge.id));
 
-  const userLogs = await db
-    .select()
-    .from(progressLogsTable)
-    .where(
-      and(
-        eq(progressLogsTable.challengeId, challenge.id),
-        eq(progressLogsTable.userId, req.user.id)
-      )
-    );
-
-  const progress = computeChallengeProgress({
-    logs: userLogs,
-    startDate: challenge.startDate,
-    durationDays: challenge.durationDays,
-    targetValue: challenge.targetValue,
-    type: challenge.type as "daily" | "total",
-    dailyTargets: challenge.dailyTargets as number[] | null,
-    noMax: challenge.noMax ?? false,
-    clientNow,
-  });
-
-  let streak = 0;
-  if (challenge.type === "daily" && progress.days) {
-    streak = computeStreak(progress.days, challenge.startDate, clientNow);
-  }
-
   const leaderboard = await buildLeaderboard(challenge, clientNow);
+
+  // User progress is only available for authenticated participants
+  let userProgress: object | null = null;
+  let streak = 0;
+
+  if (req.isAuthenticated()) {
+    const participation = await requireParticipant(req.user.id, challenge.id);
+    if (participation) {
+      const userLogs = await db
+        .select()
+        .from(progressLogsTable)
+        .where(
+          and(
+            eq(progressLogsTable.challengeId, challenge.id),
+            eq(progressLogsTable.userId, req.user.id)
+          )
+        );
+
+      const progress = computeChallengeProgress({
+        logs: userLogs,
+        startDate: challenge.startDate,
+        durationDays: challenge.durationDays,
+        targetValue: challenge.targetValue,
+        type: challenge.type as "daily" | "total",
+        dailyTargets: challenge.dailyTargets as number[] | null,
+        noMax: challenge.noMax ?? false,
+        clientNow,
+      });
+
+      if (challenge.type === "daily" && progress.days) {
+        streak = computeStreak(progress.days, challenge.startDate, clientNow);
+      }
+
+      userProgress = {
+        totalLogged: progress.totalLogged,
+        totalTarget: progress.totalTarget,
+        todayLogged: progress.todayLogged,
+        todayTarget: progress.todayTarget,
+        streak,
+        ...(progress.days ? { days: progress.days } : {}),
+      };
+    }
+  }
 
   res.json({
     challenge: {
@@ -440,14 +446,7 @@ router.get("/challenges/:id", async (req, res): Promise<void> => {
       randomizeReps: challenge.randomizeReps,
       restDayEnabled: challenge.restDayEnabled,
     },
-    userProgress: {
-      totalLogged: progress.totalLogged,
-      totalTarget: progress.totalTarget,
-      todayLogged: progress.todayLogged,
-      todayTarget: progress.todayTarget,
-      streak,
-      ...(progress.days ? { days: progress.days } : {}),
-    },
+    userProgress,
     leaderboard,
     streak,
   });
@@ -622,22 +621,11 @@ router.get("/challenges/:id/progress", async (req, res): Promise<void> => {
 });
 
 router.get("/challenges/:id/leaderboard", async (req, res): Promise<void> => {
-  if (!req.isAuthenticated()) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-
   const slugOrId = getParam(req.params, "id");
 
   const challenge = await findChallengeBySlugOrId(slugOrId);
   if (!challenge) {
     res.status(404).json({ error: "Challenge not found" });
-    return;
-  }
-
-  const participation = await requireParticipant(req.user.id, challenge.id);
-  if (!participation) {
-    res.status(403).json({ error: "Not a participant" });
     return;
   }
 
