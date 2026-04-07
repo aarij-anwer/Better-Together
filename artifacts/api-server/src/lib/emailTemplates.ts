@@ -117,6 +117,27 @@ export function notParticipatedReminderTemplate(params: {
   return { subject, html };
 }
 
+export function welcomeTemplate(params: {
+  firstName: string | null;
+  dashboardUrl: string;
+}): { subject: string; html: string } {
+  const subject = "Welcome to Get Better Together!";
+  const html = baseTemplate(`
+    <h2 style="margin:0 0 8px;font-size:22px;font-weight:700;color:${DARK};">Welcome aboard! &#127881;</h2>
+    <p style="margin:0 0 20px;font-size:15px;color:${GRAY};line-height:1.6;">${greeting(params.firstName)}</p>
+    <p style="margin:0 0 20px;font-size:15px;color:${DARK};line-height:1.6;">
+      You're officially part of <strong>Get Better Together</strong> — the place where friends push each other to build better habits, crush goals, and have fun doing it.
+    </p>
+    <p style="margin:0 0 4px;font-size:15px;color:${DARK};line-height:1.6;">
+      Ready to get started? Create your first challenge or join one with friends &#128170;
+    </p>
+    <div style="text-align:center;margin-top:8px;">
+      ${ctaButton(params.dashboardUrl, "Go to your dashboard →")}
+    </div>
+  `);
+  return { subject, html };
+}
+
 export function challengeEndedTemplate(params: {
   firstName: string | null;
   challengeTitle: string;
