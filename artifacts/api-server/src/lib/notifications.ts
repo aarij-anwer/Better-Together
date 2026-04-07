@@ -26,9 +26,21 @@ function toUTCDateString(d: Date): string {
 }
 
 function getReminderDays(durationDays: number): number[] {
-  if (durationDays <= 3) return [1];
-  if (durationDays <= 6) return [1, durationDays - 2];
-  return [3, Math.floor(durationDays / 2), durationDays - 3];
+  // dayIndex is 0-based: 0 = start day, durationDays-1 = last day
+  // Avoid reminders on the start day (already gets challenge_started email)
+  // and the last day (already gets challenge_ended email).
+  // Target: roughly day 3 (index 2), midpoint, and ~3 days before the end.
+  const candidates = [
+    2,                               // day 3 in 1-based
+    Math.floor(durationDays / 2),   // midpoint
+    durationDays - 4,               // ~3 days before last day (index durationDays-1)
+  ]
+    .filter(d => d > 0 && d < durationDays - 1) // exclude start day and last day
+    .filter((d, i, arr) => arr.indexOf(d) === i) // deduplicate
+    .sort((a, b) => a - b)
+    .slice(0, 3);
+
+  return candidates.length > 0 ? candidates : [];
 }
 
 export async function runNotifications(): Promise<NotificationSummary> {

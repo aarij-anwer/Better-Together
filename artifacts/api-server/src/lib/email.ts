@@ -1,6 +1,17 @@
 import { Resend } from "resend";
 import { logger } from "./logger";
 
+interface ResendConnectionSettings {
+  settings: {
+    api_key: string;
+    from_email?: string;
+  };
+}
+
+interface ResendConnectionResponse {
+  items?: ResendConnectionSettings[];
+}
+
 async function getCredentials(): Promise<{ apiKey: string; fromEmail: string }> {
   const hostname = process.env["REPLIT_CONNECTORS_HOSTNAME"];
   const xReplitToken = process.env["REPL_IDENTITY"]
@@ -10,7 +21,7 @@ async function getCredentials(): Promise<{ apiKey: string; fromEmail: string }> 
     : null;
 
   if (hostname && xReplitToken) {
-    const data = await fetch(
+    const data: ResendConnectionResponse = await fetch(
       "https://" + hostname + "/api/v2/connection?include_secrets=true&connector_names=resend",
       {
         headers: {
@@ -18,12 +29,13 @@ async function getCredentials(): Promise<{ apiKey: string; fromEmail: string }> 
           "X-Replit-Token": xReplitToken,
         },
       },
-    ).then((res) => res.json()).then((d: any) => d.items?.[0]);
+    ).then((res) => res.json() as Promise<ResendConnectionResponse>);
 
-    if (data?.settings?.api_key) {
+    const conn = data.items?.[0];
+    if (conn?.settings?.api_key) {
       return {
-        apiKey: data.settings.api_key,
-        fromEmail: data.settings.from_email ?? "Get Better Together <onboarding@resend.dev>",
+        apiKey: conn.settings.api_key,
+        fromEmail: conn.settings.from_email ?? "Get Better Together <onboarding@resend.dev>",
       };
     }
   }
