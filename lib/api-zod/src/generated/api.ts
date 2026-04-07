@@ -240,26 +240,28 @@ export const GetChallengeResponse = zod.object({
     isPublic: zod.boolean().optional(),
     noMax: zod.boolean().optional(),
   }),
-  userProgress: zod.object({
-    totalLogged: zod.number(),
-    totalTarget: zod.number(),
-    todayLogged: zod.number(),
-    todayTarget: zod.number(),
-    streak: zod.number(),
-    days: zod
-      .array(
-        zod.object({
-          date: zod.coerce.date(),
-          logged: zod.number(),
-          target: zod.number(),
-          completed: zod.boolean(),
-        }),
-      )
-      .optional(),
-    dailyTargets: zod.array(zod.number()).optional(),
-    randomizeReps: zod.boolean().optional(),
-    restDayEnabled: zod.boolean().optional(),
-  }),
+  userProgress: zod
+    .object({
+      totalLogged: zod.number(),
+      totalTarget: zod.number(),
+      todayLogged: zod.number(),
+      todayTarget: zod.number(),
+      streak: zod.number(),
+      days: zod
+        .array(
+          zod.object({
+            date: zod.coerce.date(),
+            logged: zod.number(),
+            target: zod.number(),
+            completed: zod.boolean(),
+          }),
+        )
+        .optional(),
+      dailyTargets: zod.array(zod.number()).optional(),
+      randomizeReps: zod.boolean().optional(),
+      restDayEnabled: zod.boolean().optional(),
+    })
+    .nullish(),
   leaderboard: zod.array(
     zod.object({
       userId: zod.string(),

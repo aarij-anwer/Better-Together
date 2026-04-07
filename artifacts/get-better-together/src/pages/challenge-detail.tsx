@@ -43,7 +43,30 @@ export default function ChallengeDetail() {
   
   const { data, isLoading } = useGetChallenge(id as string, { query: { enabled: !!id, queryKey: getGetChallengeQueryKey(id as string) } });
 
-  const todayDayIdx = data?.userProgress?.days?.findIndex(d => {
+  // Derive all state before the early-return guards so hooks stay unconditional.
+  // userProgress is null when the viewer is not an authenticated participant.
+  const userProgress = (data?.userProgress ?? null) as {
+    totalLogged: number; totalTarget: number; todayLogged: number; todayTarget: number;
+    streak: number; days?: Array<{ date: string; logged: number; target: number; completed: boolean }>;
+  } | null;
+  const isParticipant = userProgress !== null;
+
+  // Synthesise read-only days from dailyTargets for non-participants so the
+  // day-progress timeline is visible to everyone.
+  const publicDays = !isParticipant && data?.challenge?.dailyTargets && (data.challenge.dailyTargets as number[]).length > 0
+    ? (data.challenge.dailyTargets as number[]).map((target: number, idx: number) => {
+        const startParts = (data.challenge.startDate as string).slice(0, 10);
+        const d = new Date(startParts + 'T00:00:00');
+        d.setDate(d.getDate() + idx);
+        const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        return { date: dateStr, logged: 0, target, completed: false };
+      })
+    : null;
+
+  // Effective days for display — prefer real progress, fall back to public schedule
+  const effectiveDays = userProgress?.days ?? publicDays ?? null;
+
+  const todayDayIdx = effectiveDays?.findIndex(d => {
     const now = new Date();
     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     return d.date === todayStr;
@@ -71,13 +94,7 @@ export default function ChallengeDetail() {
   );
 
   const { challenge, leaderboard } = data;
-  // userProgress is null when the viewer is not an authenticated participant
-  const userProgress = data.userProgress as {
-    totalLogged: number; totalTarget: number; todayLogged: number; todayTarget: number;
-    streak: number; days?: Array<{ date: string; logged: number; target: number; completed: boolean }>;
-  } | null;
-  const streak = (userProgress?.streak as number) ?? (data.streak as number) ?? 0;
-  const isParticipant = userProgress !== null;
+  const streak = userProgress?.streak ?? (data.streak as number | undefined) ?? 0;
 
   const handleLog = (value: number) => {
     if (challenge.state === 'not_started' || !userProgress) return;
@@ -148,7 +165,7 @@ export default function ChallengeDetail() {
   })();
 
   const viewIdx = selectedDayIdx ?? todayDayIdx;
-  const viewDay = userProgress?.days && viewIdx >= 0 ? userProgress.days[viewIdx] : null;
+  const viewDay = effectiveDays && viewIdx >= 0 ? effectiveDays[viewIdx] : null;
   const isViewingRestDay = viewDay != null && viewDay.target === 0;
   const isTodayRestDay = (userProgress?.todayTarget ?? 1) === 0;
   const displayTarget = viewDay?.target ?? (challenge.dailyTargets ? challenge.dailyTargets[0] : (userProgress?.todayTarget ?? 0));
@@ -208,39 +225,7 @@ export default function ChallengeDetail() {
         <div className="grid md:grid-cols-[1fr_340px] gap-6 min-w-0">
            <div className="space-y-6 min-w-0">
               <Card className="p-6 md:p-10 rounded-[2rem] border shadow-sm flex flex-col items-center overflow-hidden">
-                {!isParticipant ? (
-                  <div className="w-full flex flex-col items-center py-6 text-center">
-                    <div className="w-20 h-20 bg-primary/10 rounded-[1.5rem] flex items-center justify-center mb-6">
-                      <LogIn className="w-10 h-10 text-primary" />
-                    </div>
-                    <h3 className="text-2xl font-black tracking-tight mb-3">
-                      {user ? "Join this challenge" : "Sign in to participate"}
-                    </h3>
-                    <p className="text-muted-foreground font-medium mb-8 max-w-xs">
-                      {user
-                        ? "Join to track your progress and compete on the leaderboard."
-                        : "Create an account to log your daily progress and compete with friends."}
-                    </p>
-                    {user ? (
-                      <Button
-                        size="lg"
-                        className="rounded-2xl h-14 px-10 text-lg font-bold shadow-md"
-                        onClick={() => setLocation(`/join/${challenge.inviteCode}`)}
-                      >
-                        Join Challenge
-                      </Button>
-                    ) : (
-                      <Button
-                        size="lg"
-                        className="rounded-2xl h-14 px-10 text-lg font-bold shadow-md"
-                        onClick={() => login(window.location.pathname)}
-                      >
-                        <LogIn className="w-5 h-5 mr-2" />
-                        Sign in to join
-                      </Button>
-                    )}
-                  </div>
-                ) : challenge.type === 'daily' ? (
+                {challenge.type === 'daily' ? (
                   <>
                     <h3 className="font-bold text-lg text-muted-foreground uppercase tracking-widest mb-8">
                       {viewDay && viewDay.date !== todayStr
@@ -248,12 +233,12 @@ export default function ChallengeDetail() {
                         : "Today's Progress"}
                     </h3>
                     <ProgressRing
-                      progress={viewDay ? (isViewingRestDay ? 100 : Math.min(100, (viewDay.logged / viewDay.target) * 100)) : 0}
+                      progress={isParticipant && viewDay ? (isViewingRestDay ? 100 : Math.min(100, (viewDay.logged / viewDay.target) * 100)) : 0}
                       size={220}
                       strokeWidth={18}
                     />
                     <div className="mt-8 mb-10 text-center">
-                      {isViewingRestDay ? (
+                      {isViewingRestDay && isParticipant ? (
                         <>
                           <div className="text-4xl font-black tracking-tight text-green-600">Rest Day</div>
                           <div className="text-lg text-muted-foreground font-bold mt-2">Take a break and recover!</div>
@@ -261,7 +246,7 @@ export default function ChallengeDetail() {
                       ) : (
                         <>
                           <div className="text-6xl font-black tracking-tight">
-                            {viewDay?.logged ?? 0}
+                            {isParticipant ? (viewDay?.logged ?? 0) : <span className="text-muted-foreground/40">—</span>}
                             <span className="text-3xl text-muted-foreground font-semibold"> / {displayTarget}</span>
                           </div>
                           <div className="text-xl text-muted-foreground font-bold mt-2 uppercase tracking-wider">{challenge.unit}</div>
@@ -273,10 +258,45 @@ export default function ChallengeDetail() {
                   <div className="w-full text-center py-6">
                     <h3 className="font-bold text-lg text-muted-foreground uppercase tracking-widest mb-8">Total Progress</h3>
                     <div className="mb-6">
-                      <div className="text-6xl font-black tracking-tight mb-6">{userProgress.totalLogged} <span className="text-3xl text-muted-foreground font-semibold">/ {userProgress.totalTarget}</span></div>
-                      <Progress value={Math.min(100, userProgress.totalTarget > 0 ? (userProgress.totalLogged / userProgress.totalTarget) * 100 : 0)} className="h-6 rounded-full" />
+                      {isParticipant ? (
+                        <>
+                          <div className="text-6xl font-black tracking-tight mb-6">{userProgress!.totalLogged} <span className="text-3xl text-muted-foreground font-semibold">/ {userProgress!.totalTarget}</span></div>
+                          <Progress value={Math.min(100, userProgress!.totalTarget > 0 ? (userProgress!.totalLogged / userProgress!.totalTarget) * 100 : 0)} className="h-6 rounded-full" />
+                        </>
+                      ) : (
+                        <>
+                          <div className="text-6xl font-black tracking-tight mb-6 text-muted-foreground/40">— <span className="text-3xl">/ {challenge.targetValue}</span></div>
+                          <Progress value={0} className="h-6 rounded-full" />
+                        </>
+                      )}
                     </div>
                     <div className="text-xl text-muted-foreground font-bold uppercase tracking-wider">{challenge.unit}</div>
+                  </div>
+                )}
+
+                {!isParticipant && (
+                  <div className="w-full border-t pt-6 flex flex-col items-center text-center gap-4">
+                    <p className="text-muted-foreground font-medium max-w-xs">
+                      {user ? "Join to start logging your progress and compete on the leaderboard." : "Sign in to log your progress and compete with friends."}
+                    </p>
+                    {user ? (
+                      <Button
+                        size="lg"
+                        className="rounded-2xl h-12 px-8 font-bold shadow-md"
+                        onClick={() => setLocation(`/join/${challenge.inviteCode}`)}
+                      >
+                        Join Challenge <ArrowRight className="w-4 h-4 ml-2" />
+                      </Button>
+                    ) : (
+                      <Button
+                        size="lg"
+                        className="rounded-2xl h-12 px-8 font-bold shadow-md"
+                        onClick={() => login(window.location.pathname)}
+                      >
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Sign in to log progress
+                      </Button>
+                    )}
                   </div>
                 )}
 
@@ -315,7 +335,7 @@ export default function ChallengeDetail() {
                 )}
               </Card>
 
-              {challenge.type === 'daily' && userProgress?.days && (
+              {challenge.type === 'daily' && effectiveDays && (
                 <Card id="day-progress" className="p-6 rounded-[2rem] border shadow-sm scroll-mt-4">
                   <div className="flex items-center justify-between mb-3">
                     <h3 className="font-bold text-lg uppercase tracking-wider text-muted-foreground">Day Progress</h3>
@@ -327,7 +347,7 @@ export default function ChallengeDetail() {
                   </div>
                   <div className="overflow-x-auto pb-2" ref={scrollContainerRef}>
                     <div className="flex gap-1 p-1" style={{ width: 'max-content' }}>
-                      {userProgress.days.map((day, idx) => {
+                      {effectiveDays.map((day, idx) => {
                         const isToday = day.date === todayStr;
                         const isSelected = idx === viewIdx;
                         const isPast = day.date < todayStr;

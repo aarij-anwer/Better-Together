@@ -745,12 +745,14 @@ components:
 
     ChallengeDetail:
       type: object
-      required: [challenge, userProgress, leaderboard, streak]
+      required: [challenge, leaderboard, streak]
       properties:
         challenge:
           $ref: "#/components/schemas/Challenge"
         userProgress:
-          $ref: "#/components/schemas/ProgressData"
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ProgressData"
         leaderboard:
           type: array
           items:

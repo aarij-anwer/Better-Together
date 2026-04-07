@@ -11,7 +11,7 @@ import type { ProgressData } from "./progressData";
 
 export interface ChallengeDetail {
   challenge: Challenge;
-  userProgress: ProgressData;
+  userProgress?: ProgressData | null;
   leaderboard: LeaderboardEntry[];
   streak: number;
 }
