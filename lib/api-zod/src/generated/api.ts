@@ -205,7 +205,7 @@ export const CreateChallengeBody = zod.object({
 });
 
 /**
- * @summary Get challenge details with progress
+ * @summary Get challenge details with progress (public; userProgress only returned for authenticated participants)
  */
 export const GetChallengeParams = zod.object({
   id: zod.coerce.string(),
@@ -403,17 +403,10 @@ export const GetProgressResponse = zod.object({
 });
 
 /**
- * @summary Get leaderboard for a challenge
+ * @summary Get leaderboard for a challenge (public; no auth required)
  */
 export const GetLeaderboardParams = zod.object({
   id: zod.coerce.string(),
-});
-
-export const GetLeaderboardHeader = zod.object({
-  Authorization: zod
-    .string()
-    .optional()
-    .describe("Opaque session token — Bearer <sid>."),
 });
 
 export const GetLeaderboardResponseItem = zod.object({

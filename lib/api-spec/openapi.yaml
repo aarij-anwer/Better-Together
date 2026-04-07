@@ -240,7 +240,7 @@ paths:
     get:
       operationId: getChallenge
       tags: [challenges]
-      summary: Get challenge details with progress
+      summary: Get challenge details with progress (public; userProgress only returned for authenticated participants)
       parameters:
         - $ref: '#/components/parameters/AuthorizationSessionHeader'
         - $ref: '#/components/parameters/SessionCookie'
@@ -251,17 +251,11 @@ paths:
             type: string
       responses:
         "200":
-          description: Challenge details
+          description: Challenge details; userProgress is null for unauthenticated or non-participant viewers
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ChallengeDetail"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorEnvelope"
         "404":
           description: Not found
           content:
@@ -454,10 +448,8 @@ paths:
     get:
       operationId: getLeaderboard
       tags: [leaderboard]
-      summary: Get leaderboard for a challenge
+      summary: Get leaderboard for a challenge (public; no auth required)
       parameters:
-        - $ref: '#/components/parameters/AuthorizationSessionHeader'
-        - $ref: '#/components/parameters/SessionCookie'
         - name: id
           in: path
           required: true
@@ -472,12 +464,6 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/LeaderboardEntry"
-        "401":
-          description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorEnvelope"
         "404":
           description: Not found
           content:

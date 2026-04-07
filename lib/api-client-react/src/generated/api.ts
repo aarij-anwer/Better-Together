@@ -898,7 +898,7 @@ export const useCreateChallenge = <
 };
 
 /**
- * @summary Get challenge details with progress
+ * @summary Get challenge details with progress (public; userProgress only returned for authenticated participants)
  */
 export const getGetChallengeUrl = (id: string) => {
   return `/api/challenges/${id}`;
@@ -958,7 +958,7 @@ export type GetChallengeQueryResult = NonNullable<
 export type GetChallengeQueryError = ErrorType<ErrorEnvelope>;
 
 /**
- * @summary Get challenge details with progress
+ * @summary Get challenge details with progress (public; userProgress only returned for authenticated participants)
  */
 
 export function useGetChallenge<
@@ -1416,7 +1416,7 @@ export function useGetProgress<
 }
 
 /**
- * @summary Get leaderboard for a challenge
+ * @summary Get leaderboard for a challenge (public; no auth required)
  */
 export const getGetLeaderboardUrl = (id: string) => {
   return `/api/challenges/${id}/leaderboard`;
@@ -1476,7 +1476,7 @@ export type GetLeaderboardQueryResult = NonNullable<
 export type GetLeaderboardQueryError = ErrorType<ErrorEnvelope>;
 
 /**
- * @summary Get leaderboard for a challenge
+ * @summary Get leaderboard for a challenge (public; no auth required)
  */
 
 export function useGetLeaderboard<
