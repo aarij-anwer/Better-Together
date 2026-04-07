@@ -295,9 +295,10 @@ router.get("/challenges/public", async (req, res): Promise<void> => {
 
       const leaderboard = await buildLeaderboard(challenge, clientNow);
 
+      const { inviteCode: _ic, createdById: _cb, ...safeChallenge } = challenge;
       return {
         challenge: {
-          ...challenge,
+          ...safeChallenge,
           startDate: challenge.startDate.toISOString(),
           createdAt: challenge.createdAt.toISOString(),
           state,
@@ -417,6 +418,165 @@ router.post("/challenges/:id/leave", async (req, res): Promise<void> => {
   res.json({ message: "Left challenge successfully" });
 });
 
+router.post("/challenges/:id/guest-join", async (req, res): Promise<void> => {
+  const slugOrId = getParam(req.params, "id");
+  const challenge = await findChallengeBySlugOrId(slugOrId);
+  if (!challenge) {
+    res.status(404).json({ error: "Challenge not found" });
+    return;
+  }
+  if (!challenge.isPublic) {
+    res.status(403).json({ error: "Guest join is only available for public challenges" });
+    return;
+  }
+
+  const name = (req.body?.name ?? "").trim();
+  if (!name || name.length < 1 || name.length > 40) {
+    res.status(400).json({ error: "Name is required (1-40 characters)" });
+    return;
+  }
+
+  const MAX_GUESTS_PER_CHALLENGE = 100;
+  const guestCountResult = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(participationsTable)
+    .innerJoin(usersTable, eq(usersTable.id, participationsTable.userId))
+    .where(and(eq(participationsTable.challengeId, challenge.id), eq(usersTable.isAnonymous, true)));
+  if ((guestCountResult[0]?.count ?? 0) >= MAX_GUESTS_PER_CHALLENGE) {
+    res.status(429).json({ error: "This challenge has reached the maximum number of guest participants" });
+    return;
+  }
+
+  const guestId = crypto.randomUUID();
+  await db.insert(usersTable).values({
+    id: guestId,
+    firstName: name,
+    isAnonymous: true,
+  });
+
+  await db.insert(participationsTable).values({
+    userId: guestId,
+    challengeId: challenge.id,
+  });
+
+  res.json({ guestId, challengeSlug: challenge.slug });
+});
+
+router.post("/challenges/:id/guest-log", async (req, res): Promise<void> => {
+  const slugOrId = getParam(req.params, "id");
+  const challenge = await findChallengeBySlugOrId(slugOrId);
+  if (!challenge) {
+    res.status(404).json({ error: "Challenge not found" });
+    return;
+  }
+  if (!challenge.isPublic) {
+    res.status(403).json({ error: "Guest logging is only available for public challenges" });
+    return;
+  }
+
+  const guestId = (req.body?.guestId ?? "").trim();
+  if (!guestId) {
+    res.status(400).json({ error: "guestId is required" });
+    return;
+  }
+
+  const [guestUser] = await db.select().from(usersTable).where(eq(usersTable.id, guestId));
+  if (!guestUser || !guestUser.isAnonymous) {
+    res.status(403).json({ error: "Invalid guest user" });
+    return;
+  }
+
+  const participation = await requireParticipant(guestId, challenge.id);
+  if (!participation) {
+    res.status(403).json({ error: "Not a participant" });
+    return;
+  }
+
+  const clientNow = getClientNow(req.headers["x-timezone-offset"] as string | undefined);
+  const state = getChallengeState(challenge.startDate, challenge.durationDays, clientNow);
+  if (state === "not_started") {
+    res.status(400).json({ error: "Challenge has not started yet" });
+    return;
+  }
+  if (state === "completed") {
+    res.status(400).json({ error: "Challenge has already ended" });
+    return;
+  }
+
+  const rawValue = Number(req.body?.value);
+  if (!Number.isFinite(rawValue) || rawValue <= 0) {
+    res.status(400).json({ error: "value must be a positive number" });
+    return;
+  }
+
+  let valueToLog = Math.round(rawValue);
+  const challengeDailyTargets = challenge.dailyTargets as number[] | null;
+
+  if (challengeDailyTargets) {
+    const currentDay = getCurrentDay(challenge.startDate, challenge.durationDays, clientNow);
+    const todayTarget = challengeDailyTargets[currentDay - 1] ?? 0;
+    if (todayTarget === 0) {
+      res.status(400).json({ error: "Today is a rest day — no progress can be logged" });
+      return;
+    }
+  }
+
+  const existingLogs = await db
+    .select()
+    .from(progressLogsTable)
+    .where(
+      and(
+        eq(progressLogsTable.challengeId, challenge.id),
+        eq(progressLogsTable.userId, guestId)
+      )
+    );
+
+  if (challenge.type === "daily" && !challenge.noMax) {
+    const currentDay = getCurrentDay(challenge.startDate, challenge.durationDays, clientNow);
+    const daysUpToToday = challengeDailyTargets
+      ? challengeDailyTargets.slice(0, currentDay)
+      : Array.from({ length: currentDay }, () => challenge.targetValue);
+    const maxTotalToDate = daysUpToToday.reduce((sum, t) => sum + t, 0);
+    const allocatedTotal = computeAllocatedTotal(existingLogs, challenge.startDate, challenge.durationDays, challenge.targetValue, challengeDailyTargets);
+    const remaining = maxTotalToDate - allocatedTotal;
+    if (remaining <= 0) {
+      res.status(400).json({ error: "Challenge fully completed, no more progress can be logged" });
+      return;
+    }
+    valueToLog = Math.min(valueToLog, remaining);
+  }
+
+  const now = clientNow;
+  await db.insert(progressLogsTable).values({
+    userId: guestId,
+    challengeId: challenge.id,
+    date: now,
+    value: valueToLog,
+  });
+
+  const allLogs = [...existingLogs, { date: now, value: valueToLog, userId: guestId, challengeId: challenge.id, id: "", createdAt: now }];
+
+  const progress = computeChallengeProgress({
+    logs: allLogs,
+    startDate: challenge.startDate,
+    durationDays: challenge.durationDays,
+    targetValue: challenge.targetValue,
+    type: challenge.type as "daily" | "total",
+    dailyTargets: challengeDailyTargets,
+    noMax: challenge.noMax ?? false,
+    clientNow,
+  });
+
+  res.json({
+    totalLogged: progress.totalLogged,
+    totalTarget: progress.totalTarget,
+    todayLogged: progress.todayLogged,
+    todayTarget: progress.todayTarget,
+    valueLogged: valueToLog,
+    ...(progress.days ? { days: progress.days } : {}),
+  });
+});
+
 router.get("/challenges/:id", async (req, res): Promise<void> => {
   const slugOrId = getParam(req.params, "id");
 
@@ -436,12 +596,15 @@ router.get("/challenges/:id", async (req, res): Promise<void> => {
 
   const leaderboard = await buildLeaderboard(challenge, clientNow);
 
-  // User progress is only available for authenticated participants
   let userProgress: object | null = null;
   let streak = 0;
 
-  if (req.isAuthenticated()) {
-    const participation = await requireParticipant(req.user.id, challenge.id);
+  const effectiveUserId = req.isAuthenticated()
+    ? req.user.id
+    : typeof req.query.guestId === "string" ? req.query.guestId : null;
+
+  if (effectiveUserId) {
+    const participation = await requireParticipant(effectiveUserId, challenge.id);
     if (participation) {
       const userLogs = await db
         .select()
@@ -449,7 +612,7 @@ router.get("/challenges/:id", async (req, res): Promise<void> => {
         .where(
           and(
             eq(progressLogsTable.challengeId, challenge.id),
-            eq(progressLogsTable.userId, req.user.id)
+            eq(progressLogsTable.userId, effectiveUserId)
           )
         );
 

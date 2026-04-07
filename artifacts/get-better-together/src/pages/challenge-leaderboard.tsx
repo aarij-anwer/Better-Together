@@ -12,7 +12,7 @@ export default function ChallengeLeaderboard() {
   const id = params?.id;
   const [, setLocation] = useLocation();
   
-  const { data: challengeData, isLoading: isChallengeLoading } = useGetChallenge(id as string, { 
+  const { data: challengeData, isLoading: isChallengeLoading } = useGetChallenge(id as string, undefined, { 
     query: { enabled: !!id, queryKey: getGetChallengeQueryKey(id as string) } 
   });
   

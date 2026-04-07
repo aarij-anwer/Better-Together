@@ -1,7 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { runNotifications } from "./lib/notifications";
-import { seedPublicChallenge } from "./lib/publicChallenges";
+import { seedDemoChallenge } from "./lib/seedDemoChallenge";
 import cron from "node-cron";
 
 const rawPort = process.env["PORT"];
@@ -36,15 +36,9 @@ app.listen(port, (err) => {
     }
   }, { timezone: "UTC" });
 
-  cron.schedule("0 0 * * *", async () => {
-    logger.info("Running public challenge seed job");
-    try {
-      const result = await seedPublicChallenge();
-      logger.info(result, "Public challenge seed job complete");
-    } catch (err) {
-      logger.error({ err }, "Public challenge seed job failed");
-    }
-  }, { timezone: "UTC" });
+  logger.info("Cron jobs scheduled (notifications: 09:00 UTC)");
 
-  logger.info("Cron jobs scheduled (notifications: 09:00 UTC, public challenge seed: 00:00 UTC)");
+  seedDemoChallenge().catch((err) => {
+    logger.error({ err }, "Failed to seed demo challenge");
+  });
 });

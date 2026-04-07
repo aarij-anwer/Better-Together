@@ -255,7 +255,7 @@ paths:
     get:
       operationId: getChallenge
       tags: [challenges]
-      summary: Get challenge details with progress (public; userProgress only returned for authenticated participants)
+      summary: Get challenge details with progress (public; userProgress only returned for authenticated participants or guest with guestId)
       parameters:
         - $ref: '#/components/parameters/AuthorizationSessionHeader'
         - $ref: '#/components/parameters/SessionCookie'
@@ -264,6 +264,12 @@ paths:
           required: true
           schema:
             type: string
+        - name: guestId
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Anonymous guest user ID (from guest-join). Provides userProgress without auth.
       responses:
         "200":
           description: Challenge details; userProgress is null for unauthenticated or non-participant viewers
@@ -273,6 +279,111 @@ paths:
                 $ref: "#/components/schemas/ChallengeDetail"
         "404":
           description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /challenges/{id}/guest-join:
+    post:
+      operationId: guestJoinChallenge
+      tags: [challenges]
+      summary: Join a public challenge as a guest (no auth required)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 40
+      responses:
+        "200":
+          description: Guest joined successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [guestId, challengeSlug]
+                properties:
+                  guestId:
+                    type: string
+                  challengeSlug:
+                    type: string
+        "400":
+          description: Invalid name
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "403":
+          description: Challenge is not public
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Challenge not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /challenges/{id}/guest-log:
+    post:
+      operationId: guestLogProgress
+      tags: [challenges]
+      summary: Log progress as a guest user (no auth required)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [guestId, value]
+              properties:
+                guestId:
+                  type: string
+                value:
+                  type: number
+                  minimum: 1
+      responses:
+        "200":
+          description: Progress logged successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LogProgressResponse"
+        "400":
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "403":
+          description: Not a participant or not a public challenge
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+        "404":
+          description: Challenge not found
           content:
             application/json:
               schema:

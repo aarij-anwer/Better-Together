@@ -27,6 +27,10 @@ import type {
   CreateChallengeBody,
   DashboardSummary,
   ErrorEnvelope,
+  GetChallengeParams,
+  GuestJoinChallenge200,
+  GuestJoinChallengeBody,
+  GuestLogProgressBody,
   HandleBrowserLoginCallbackParams,
   HealthStatus,
   JoinChallengeResponse,
@@ -974,24 +978,40 @@ export function useGetPublicChallenges<
 }
 
 /**
- * @summary Get challenge details with progress (public; userProgress only returned for authenticated participants)
+ * @summary Get challenge details with progress (public; userProgress only returned for authenticated participants or guest with guestId)
  */
-export const getGetChallengeUrl = (id: string) => {
-  return `/api/challenges/${id}`;
+export const getGetChallengeUrl = (id: string, params?: GetChallengeParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/challenges/${id}?${stringifiedParams}`
+    : `/api/challenges/${id}`;
 };
 
 export const getChallenge = async (
   id: string,
+  params?: GetChallengeParams,
   options?: RequestInit,
 ): Promise<ChallengeDetail> => {
-  return customFetch<ChallengeDetail>(getGetChallengeUrl(id), {
+  return customFetch<ChallengeDetail>(getGetChallengeUrl(id, params), {
     ...options,
     method: "GET",
   });
 };
 
-export const getGetChallengeQueryKey = (id: string) => {
-  return [`/api/challenges/${id}`] as const;
+export const getGetChallengeQueryKey = (
+  id: string,
+  params?: GetChallengeParams,
+) => {
+  return [`/api/challenges/${id}`, ...(params ? [params] : [])] as const;
 };
 
 export const getGetChallengeQueryOptions = <
@@ -999,6 +1019,7 @@ export const getGetChallengeQueryOptions = <
   TError = ErrorType<ErrorEnvelope>,
 >(
   id: string,
+  params?: GetChallengeParams,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getChallenge>>,
@@ -1010,11 +1031,12 @@ export const getGetChallengeQueryOptions = <
 ) => {
   const { query: queryOptions, request: requestOptions } = options ?? {};
 
-  const queryKey = queryOptions?.queryKey ?? getGetChallengeQueryKey(id);
+  const queryKey =
+    queryOptions?.queryKey ?? getGetChallengeQueryKey(id, params);
 
   const queryFn: QueryFunction<Awaited<ReturnType<typeof getChallenge>>> = ({
     signal,
-  }) => getChallenge(id, { signal, ...requestOptions });
+  }) => getChallenge(id, params, { signal, ...requestOptions });
 
   return {
     queryKey,
@@ -1034,7 +1056,7 @@ export type GetChallengeQueryResult = NonNullable<
 export type GetChallengeQueryError = ErrorType<ErrorEnvelope>;
 
 /**
- * @summary Get challenge details with progress (public; userProgress only returned for authenticated participants)
+ * @summary Get challenge details with progress (public; userProgress only returned for authenticated participants or guest with guestId)
  */
 
 export function useGetChallenge<
@@ -1042,6 +1064,7 @@ export function useGetChallenge<
   TError = ErrorType<ErrorEnvelope>,
 >(
   id: string,
+  params?: GetChallengeParams,
   options?: {
     query?: UseQueryOptions<
       Awaited<ReturnType<typeof getChallenge>>,
@@ -1051,7 +1074,7 @@ export function useGetChallenge<
     request?: SecondParameter<typeof customFetch>;
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
-  const queryOptions = getGetChallengeQueryOptions(id, options);
+  const queryOptions = getGetChallengeQueryOptions(id, params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -1059,6 +1082,180 @@ export function useGetChallenge<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Join a public challenge as a guest (no auth required)
+ */
+export const getGuestJoinChallengeUrl = (id: string) => {
+  return `/api/challenges/${id}/guest-join`;
+};
+
+export const guestJoinChallenge = async (
+  id: string,
+  guestJoinChallengeBody: GuestJoinChallengeBody,
+  options?: RequestInit,
+): Promise<GuestJoinChallenge200> => {
+  return customFetch<GuestJoinChallenge200>(getGuestJoinChallengeUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(guestJoinChallengeBody),
+  });
+};
+
+export const getGuestJoinChallengeMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof guestJoinChallenge>>,
+    TError,
+    { id: string; data: BodyType<GuestJoinChallengeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof guestJoinChallenge>>,
+  TError,
+  { id: string; data: BodyType<GuestJoinChallengeBody> },
+  TContext
+> => {
+  const mutationKey = ["guestJoinChallenge"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof guestJoinChallenge>>,
+    { id: string; data: BodyType<GuestJoinChallengeBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return guestJoinChallenge(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GuestJoinChallengeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof guestJoinChallenge>>
+>;
+export type GuestJoinChallengeMutationBody = BodyType<GuestJoinChallengeBody>;
+export type GuestJoinChallengeMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Join a public challenge as a guest (no auth required)
+ */
+export const useGuestJoinChallenge = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof guestJoinChallenge>>,
+    TError,
+    { id: string; data: BodyType<GuestJoinChallengeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof guestJoinChallenge>>,
+  TError,
+  { id: string; data: BodyType<GuestJoinChallengeBody> },
+  TContext
+> => {
+  return useMutation(getGuestJoinChallengeMutationOptions(options));
+};
+
+/**
+ * @summary Log progress as a guest user (no auth required)
+ */
+export const getGuestLogProgressUrl = (id: string) => {
+  return `/api/challenges/${id}/guest-log`;
+};
+
+export const guestLogProgress = async (
+  id: string,
+  guestLogProgressBody: GuestLogProgressBody,
+  options?: RequestInit,
+): Promise<LogProgressResponse> => {
+  return customFetch<LogProgressResponse>(getGuestLogProgressUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(guestLogProgressBody),
+  });
+};
+
+export const getGuestLogProgressMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof guestLogProgress>>,
+    TError,
+    { id: string; data: BodyType<GuestLogProgressBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof guestLogProgress>>,
+  TError,
+  { id: string; data: BodyType<GuestLogProgressBody> },
+  TContext
+> => {
+  const mutationKey = ["guestLogProgress"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof guestLogProgress>>,
+    { id: string; data: BodyType<GuestLogProgressBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return guestLogProgress(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type GuestLogProgressMutationResult = NonNullable<
+  Awaited<ReturnType<typeof guestLogProgress>>
+>;
+export type GuestLogProgressMutationBody = BodyType<GuestLogProgressBody>;
+export type GuestLogProgressMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Log progress as a guest user (no auth required)
+ */
+export const useGuestLogProgress = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof guestLogProgress>>,
+    TError,
+    { id: string; data: BodyType<GuestLogProgressBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof guestLogProgress>>,
+  TError,
+  { id: string; data: BodyType<GuestLogProgressBody> },
+  TContext
+> => {
+  return useMutation(getGuestLogProgressMutationOptions(options));
+};
 
 /**
  * @summary Public preview of a challenge by invite code (no auth required)

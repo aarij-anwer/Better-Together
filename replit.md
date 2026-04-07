@@ -63,7 +63,7 @@ Social fitness challenge app where users create private/public, time-bound chall
 
 ### DB Schema (lib/db/src/schema/)
 
-- `users` (auth.ts) — Replit Auth users with profile info; `is_admin boolean` column for admin privileges
+- `users` (auth.ts) — Replit Auth users with profile info; `is_admin boolean` column for admin privileges; `is_anonymous boolean` for guest users
 - `sessions` (auth.ts) — Session store for auth
 - `challenges` (challenges.ts) — Challenge definitions with invite codes; `is_public boolean` and `no_max boolean` columns
 - `participations` (participations.ts) — User-challenge join table
@@ -83,6 +83,9 @@ Social fitness challenge app where users create private/public, time-bound chall
 - `GET /api/challenges/:id/progress` — User's progress data
 - `GET /api/challenges/:id/leaderboard` — Full leaderboard
 - `GET /api/dashboard/summary` — Dashboard summary stats
+- `GET /api/challenges/public` — List active public challenges with leaderboard (strips sensitive fields)
+- `POST /api/challenges/:id/guest-join` — Join a public challenge as guest (name only, no auth, 100 guest cap)
+- `POST /api/challenges/:id/guest-log` — Log progress as guest (guestId + value)
 - `POST /api/admin/notifications/run` — Manually trigger notification cron (challenge creator or first user)
 
 ### Key Business Logic
@@ -118,12 +121,19 @@ After editing `lib/api-spec/openapi.yaml`:
 
 ### Frontend Pages (artifacts/get-better-together/src/pages/)
 
-- `/` — Welcome (unauthenticated) or Dashboard (authenticated)
+- `/` — Welcome with "Try it now" CTA (unauthenticated) or Dashboard (authenticated)
 - `/challenge/new` — Create challenge form (Public toggle for admins, No Max in Customize)
 - `/challenge/:id` — Challenge detail with progress ring/bar, quick-add, leaderboard, badges
 - `/challenge/:id/leaderboard` — Full leaderboard view
 - `/join/:inviteCode` — Join challenge preview
 - `/profile` — User profile
+
+### Guest Mode & Demo Challenge
+
+- **Demo challenge**: "10-Day Pushup Challenge" (slug: `demo-pushup-challenge`) seeded on server startup via `seedDemoChallenge.ts`; idempotent via slug check.
+- **Seed data**: 4 dummy anonymous users with pre-logged progress (Alex K., Jamie L., Morgan R., Sam T.)
+- **Guest flow**: Visitor clicks "Try it now" → `/challenge/demo-pushup-challenge` → enters name → `POST /guest-join` → guestId stored in `localStorage` as `gbt_guest_{slug}` → can log reps without auth
+- **Security**: 100-guest cap per challenge; `/challenges/public` strips `inviteCode`/`createdById` from responses; guest identity via UUID (bearer model, acceptable for low-stakes demo)
 
 ### Frontend Auth
 

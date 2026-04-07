@@ -306,3 +306,29 @@ export type HandleBrowserLoginCallbackParams = {
   state?: string;
   iss?: string;
 };
+
+export type GetChallengeParams = {
+  /**
+   * Anonymous guest user ID (from guest-join). Provides userProgress without auth.
+   */
+  guestId?: string;
+};
+
+export type GuestJoinChallengeBody = {
+  /**
+   * @minLength 1
+   * @maxLength 40
+   */
+  name: string;
+};
+
+export type GuestJoinChallenge200 = {
+  guestId: string;
+  challengeSlug: string;
+};
+
+export type GuestLogProgressBody = {
+  guestId: string;
+  /** @minimum 1 */
+  value: number;
+};

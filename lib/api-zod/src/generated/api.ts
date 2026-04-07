@@ -246,10 +246,19 @@ export const GetPublicChallengesResponse = zod.array(
 );
 
 /**
- * @summary Get challenge details with progress (public; userProgress only returned for authenticated participants)
+ * @summary Get challenge details with progress (public; userProgress only returned for authenticated participants or guest with guestId)
  */
 export const GetChallengeParams = zod.object({
   id: zod.coerce.string(),
+});
+
+export const GetChallengeQueryParams = zod.object({
+  guestId: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Anonymous guest user ID (from guest-join). Provides userProgress without auth.",
+    ),
 });
 
 export const GetChallengeHeader = zod.object({
@@ -315,6 +324,52 @@ export const GetChallengeResponse = zod.object({
     }),
   ),
   streak: zod.number(),
+});
+
+/**
+ * @summary Join a public challenge as a guest (no auth required)
+ */
+export const GuestJoinChallengeParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const guestJoinChallengeBodyNameMax = 40;
+
+export const GuestJoinChallengeBody = zod.object({
+  name: zod.string().min(1).max(guestJoinChallengeBodyNameMax),
+});
+
+export const GuestJoinChallengeResponse = zod.object({
+  guestId: zod.string(),
+  challengeSlug: zod.string(),
+});
+
+/**
+ * @summary Log progress as a guest user (no auth required)
+ */
+export const GuestLogProgressParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GuestLogProgressBody = zod.object({
+  guestId: zod.string(),
+  value: zod.number().min(1),
+});
+
+export const GuestLogProgressResponse = zod.object({
+  totalLogged: zod.number(),
+  todayLogged: zod.number(),
+  todayTarget: zod.number(),
+  days: zod
+    .array(
+      zod.object({
+        date: zod.coerce.date(),
+        logged: zod.number(),
+        target: zod.number(),
+        completed: zod.boolean(),
+      }),
+    )
+    .optional(),
 });
 
 /**

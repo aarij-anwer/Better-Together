@@ -22,6 +22,7 @@ export const usersTable = pgTable("users", {
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
   isAdmin: boolean("is_admin").notNull().default(false),
+  isAnonymous: boolean("is_anonymous").notNull().default(false),
 });
 
 export type UpsertUser = typeof usersTable.$inferInsert;

@@ -66,9 +66,14 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
             <p className="text-xl md:text-2xl text-foreground/75 max-w-xl leading-relaxed font-medium mb-8">
               Create fitness challenges, invite friends, log daily progress, and race to the top of the leaderboard.
             </p>
-            <Button size="lg" className="h-14 px-10 rounded-2xl text-lg font-bold shadow-lg" onClick={onLogin}>
-              Get started — it's free <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 items-center">
+              <Button size="lg" className="h-14 px-10 rounded-2xl text-lg font-bold shadow-lg" onClick={() => setLocation("/challenge/demo-pushup-challenge")}>
+                Try it now <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+              <Button size="lg" variant="outline" className="h-14 px-8 rounded-2xl text-lg font-bold border-2" onClick={onLogin}>
+                Sign in
+              </Button>
+            </div>
           </div>
         </div>
       </div>

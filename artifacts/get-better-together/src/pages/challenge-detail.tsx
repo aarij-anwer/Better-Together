@@ -1,20 +1,28 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { useAuth } from "@workspace/replit-auth-web";
-import { useGetChallenge, useLogProgress, getGetChallengeQueryKey, getGetProgressQueryKey, getListChallengesQueryKey, getGetDashboardSummaryQueryKey } from "@workspace/api-client-react";
+import { useGetChallenge, useLogProgress, useGuestJoinChallenge, useGuestLogProgress, getGetChallengeQueryKey, getGetProgressQueryKey, getListChallengesQueryKey, getGetDashboardSummaryQueryKey, getGetPublicChallengesQueryKey } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Activity, Trophy, Clock, Users, ArrowRight, Share, CheckCircle2, Flame, CalendarDays, LogIn } from "lucide-react";
+import { Activity, Trophy, Clock, Users, ArrowRight, Share, CheckCircle2, Flame, CalendarDays, LogIn, UserPlus } from "lucide-react";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { formatActivityName, getQuickLogValues, buildInviteText } from "@/lib/constants";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+function getStoredGuestId(challengeSlug: string): string | null {
+  try {
+    return localStorage.getItem(`gbt_guest_${challengeSlug}`);
+  } catch { return null; }
+}
+function setStoredGuestId(challengeSlug: string, guestId: string) {
+  try { localStorage.setItem(`gbt_guest_${challengeSlug}`, guestId); } catch {}
+}
 
 export default function ChallengeDetail() {
   const [, params] = useRoute('/challenge/:id');
@@ -23,7 +31,11 @@ export default function ChallengeDetail() {
   const { user, login } = useAuth();
   const queryClient = useQueryClient();
   const logMutation = useLogProgress();
+  const guestJoinMutation = useGuestJoinChallenge();
+  const guestLogMutation = useGuestLogProgress();
   const [customVal, setCustomVal] = useState("");
+  const [guestName, setGuestName] = useState("");
+  const [guestId, setGuestId] = useState<string | null>(() => id ? getStoredGuestId(id) : null);
   const [selectedDayIdx, setSelectedDayIdx] = useState<number | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const dayRefs = useRef<Map<number, HTMLButtonElement>>(new Map());
@@ -40,8 +52,9 @@ export default function ChallengeDetail() {
       container.scrollTo({ left: elLeft - containerWidth / 2 + elWidth / 2, behavior: 'smooth' });
     }
   }, []);
-  
-  const { data, isLoading } = useGetChallenge(id as string, { query: { enabled: !!id, queryKey: getGetChallengeQueryKey(id as string) } });
+
+  const challengeParams = !user && guestId ? { guestId } : undefined;
+  const { data, isLoading } = useGetChallenge(id as string, challengeParams, { query: { enabled: !!id, queryKey: getGetChallengeQueryKey(id as string, challengeParams) } });
 
   // Derive all state before the early-return guards so hooks stay unconditional.
   // userProgress is null when the viewer is not an authenticated participant.
@@ -96,49 +109,83 @@ export default function ChallengeDetail() {
   const { challenge, leaderboard } = data;
   const streak = userProgress?.streak ?? (data.streak as number | undefined) ?? 0;
 
+  const isGuest = !user && !!guestId;
+
+  const invalidateChallenge = () => {
+    queryClient.invalidateQueries({ queryKey: getGetChallengeQueryKey(challenge.slug || challenge.id, challengeParams) });
+    queryClient.invalidateQueries({ queryKey: getGetProgressQueryKey(challenge.slug || challenge.id) });
+    queryClient.invalidateQueries({ queryKey: getListChallengesQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
+    queryClient.invalidateQueries({ queryKey: getGetPublicChallengesQueryKey() });
+  };
+
   const handleLog = (value: number) => {
     if (challenge.state === 'not_started' || !userProgress) return;
     const previousTotal = userProgress.totalLogged;
     const target = userProgress.totalTarget;
     const wasAlreadyComplete = target > 0 && previousTotal >= target;
 
-    logMutation.mutate(
-      { id: challenge.slug || challenge.id, data: { value } },
+    const onSuccess = (responseData: unknown) => {
+      invalidateChallenge();
+      const resp = responseData as { totalLogged?: number; totalTarget?: number; valueLogged?: number } | undefined;
+      const serverTotal = resp?.totalLogged ?? previousTotal + value;
+      const serverTarget = resp?.totalTarget ?? target;
+      const actualLogged = resp?.valueLogged ?? value;
+      const isNowComplete = serverTarget > 0 && serverTotal >= serverTarget;
+      const wasCapped = actualLogged < value;
+      if (!challenge.noMax && (wasAlreadyComplete || (wasCapped && actualLogged === 0))) {
+        toast.info("You've already completed this challenge! Extra reps won't count toward the total.");
+      } else if (!challenge.noMax && isNowComplete) {
+        toast.success("Challenge target reached! Amazing work!");
+      } else if (wasCapped) {
+        toast.success(`Logged ${actualLogged} ${challenge.unit} (capped — only ${serverTarget - serverTotal + actualLogged} remaining)`);
+      } else {
+        toast.success(`Logged ${value} ${challenge.unit}`);
+      }
+      setCustomVal("");
+    };
+
+    const onError = (error: unknown) => {
+      const err = error as { data?: { error?: string } | null; message?: string } | undefined;
+      const serverMsg = (err?.data && typeof err.data === 'object' && 'error' in err.data) ? err.data.error : '';
+      const errorMsg = serverMsg || err?.message || "";
+      if (errorMsg.includes("fully completed")) {
+        toast.info("You've already completed this challenge! Extra reps won't count toward the total.");
+      } else if (errorMsg.includes("rest day")) {
+        toast.info("Today is a rest day — no logging needed!");
+      } else {
+        toast.error(errorMsg || "Failed to log activity");
+      }
+      setCustomVal("");
+    };
+
+    if (isGuest && guestId) {
+      guestLogMutation.mutate(
+        { id: challenge.slug || challenge.id, data: { guestId, value } },
+        { onSuccess, onError }
+      );
+    } else {
+      logMutation.mutate(
+        { id: challenge.slug || challenge.id, data: { value } },
+        { onSuccess, onError }
+      );
+    }
+  };
+
+  const handleGuestJoin = () => {
+    const name = guestName.trim();
+    if (!name || !id) return;
+    guestJoinMutation.mutate(
+      { id, data: { name } },
       {
-        onSuccess: (responseData) => {
-          queryClient.invalidateQueries({ queryKey: getGetChallengeQueryKey(challenge.slug || challenge.id) });
-          queryClient.invalidateQueries({ queryKey: getGetProgressQueryKey(challenge.slug || challenge.id) });
-          queryClient.invalidateQueries({ queryKey: getListChallengesQueryKey() });
-          queryClient.invalidateQueries({ queryKey: getGetDashboardSummaryQueryKey() });
-          const resp = responseData as { totalLogged?: number; totalTarget?: number; valueLogged?: number } | undefined;
-          const serverTotal = resp?.totalLogged ?? previousTotal + value;
-          const serverTarget = resp?.totalTarget ?? target;
-          const actualLogged = resp?.valueLogged ?? value;
-          const isNowComplete = serverTarget > 0 && serverTotal >= serverTarget;
-          const wasCapped = actualLogged < value;
-          if (!challenge.noMax && (wasAlreadyComplete || (wasCapped && actualLogged === 0))) {
-            toast.info("You've already completed this challenge! Extra reps won't count toward the total.");
-          } else if (!challenge.noMax && isNowComplete) {
-            toast.success("Challenge target reached! Amazing work! 🎉");
-          } else if (wasCapped) {
-            toast.success(`Logged ${actualLogged} ${challenge.unit} (capped — only ${serverTarget - serverTotal + actualLogged} remaining)`);
-          } else {
-            toast.success(`Logged ${value} ${challenge.unit}`);
-          }
-          setCustomVal("");
+        onSuccess: (res) => {
+          setGuestId(res.guestId);
+          setStoredGuestId(id, res.guestId);
+          invalidateChallenge();
+          toast.success(`Welcome, ${name}! You're in the challenge.`);
         },
-        onError: (error: unknown) => {
-          const err = error as { data?: { error?: string } | null; message?: string } | undefined;
-          const serverMsg = (err?.data && typeof err.data === 'object' && 'error' in err.data) ? err.data.error : '';
-          const errorMsg = serverMsg || err?.message || "";
-          if (errorMsg.includes("fully completed")) {
-            toast.info("You've already completed this challenge! Extra reps won't count toward the total.");
-          } else if (errorMsg.includes("rest day")) {
-            toast.info("Today is a rest day — no logging needed!");
-          } else {
-            toast.error(errorMsg || "Failed to log activity");
-          }
-          setCustomVal("");
+        onError: () => {
+          toast.error("Could not join. Please try again.");
         }
       }
     );
@@ -276,26 +323,57 @@ export default function ChallengeDetail() {
 
                 {!isParticipant && (
                   <div className="w-full border-t pt-6 flex flex-col items-center text-center gap-4">
-                    <p className="text-muted-foreground font-medium max-w-xs">
-                      {user ? "Join to start logging your progress and compete on the leaderboard." : "Sign in to log your progress and compete with friends."}
-                    </p>
-                    {user ? (
-                      <Button
-                        size="lg"
-                        className="rounded-2xl h-12 px-8 font-bold shadow-md"
-                        onClick={() => setLocation(`/join/${challenge.inviteCode}`)}
-                      >
-                        Join Challenge <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
+                    {challenge.isPublic && !user ? (
+                      <>
+                        <p className="text-muted-foreground font-medium max-w-xs">
+                          Enter your name to join this challenge — no account needed!
+                        </p>
+                        <div className="flex gap-2 w-full max-w-xs">
+                          <Input
+                            placeholder="Your name"
+                            value={guestName}
+                            onChange={e => setGuestName(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && handleGuestJoin()}
+                            className="h-12 rounded-xl text-center font-bold border-2"
+                            maxLength={40}
+                          />
+                          <Button
+                            size="lg"
+                            className="rounded-xl h-12 px-6 font-bold shadow-sm shrink-0"
+                            onClick={handleGuestJoin}
+                            disabled={!guestName.trim() || guestJoinMutation.isPending}
+                          >
+                            <UserPlus className="w-4 h-4 mr-1" /> Join
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Want to save your progress? <button onClick={() => login(window.location.pathname)} className="text-primary font-bold hover:underline">Sign in</button> instead.
+                        </p>
+                      </>
                     ) : (
-                      <Button
-                        size="lg"
-                        className="rounded-2xl h-12 px-8 font-bold shadow-md"
-                        onClick={() => login(window.location.pathname)}
-                      >
-                        <LogIn className="w-4 h-4 mr-2" />
-                        Sign in to log progress
-                      </Button>
+                      <>
+                        <p className="text-muted-foreground font-medium max-w-xs">
+                          {user ? "Join to start logging your progress and compete on the leaderboard." : "Sign in to log your progress and compete with friends."}
+                        </p>
+                        {user ? (
+                          <Button
+                            size="lg"
+                            className="rounded-2xl h-12 px-8 font-bold shadow-md"
+                            onClick={() => setLocation(`/join/${challenge.inviteCode}`)}
+                          >
+                            Join Challenge <ArrowRight className="w-4 h-4 ml-2" />
+                          </Button>
+                        ) : (
+                          <Button
+                            size="lg"
+                            className="rounded-2xl h-12 px-8 font-bold shadow-md"
+                            onClick={() => login(window.location.pathname)}
+                          >
+                            <LogIn className="w-4 h-4 mr-2" />
+                            Sign in to log progress
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
@@ -311,8 +389,8 @@ export default function ChallengeDetail() {
                   <div className="w-full border-t pt-8">
                     <h4 className="font-black text-xl mb-6 text-center">Log Activity</h4>
                     <div className="flex gap-3 justify-center mb-6 max-w-[340px] mx-auto">
-                      <Button onClick={() => handleLog(quickLogSmall)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+{quickLogSmall} {challenge.unit}</Button>
-                      <Button onClick={() => handleLog(quickLogLarge)} disabled={isNotStarted || logMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+{quickLogLarge} {challenge.unit}</Button>
+                      <Button onClick={() => handleLog(quickLogSmall)} disabled={isNotStarted || logMutation.isPending || guestLogMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+{quickLogSmall} {challenge.unit}</Button>
+                      <Button onClick={() => handleLog(quickLogLarge)} disabled={isNotStarted || logMutation.isPending || guestLogMutation.isPending} variant="outline" className="flex-1 rounded-2xl h-16 text-xl font-black border-2 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-all">+{quickLogLarge} {challenge.unit}</Button>
                     </div>
                     <div className="flex gap-3 max-w-[340px] mx-auto">
                       <Input 
@@ -325,7 +403,7 @@ export default function ChallengeDetail() {
                       />
                       <Button 
                         onClick={() => handleLog(Number(customVal))} 
-                        disabled={isNotStarted || !customVal || Number(customVal) <= 0 || logMutation.isPending}
+                        disabled={isNotStarted || !customVal || Number(customVal) <= 0 || logMutation.isPending || guestLogMutation.isPending}
                         className="h-14 rounded-xl px-8 font-bold text-lg shadow-sm"
                       >
                         Add
