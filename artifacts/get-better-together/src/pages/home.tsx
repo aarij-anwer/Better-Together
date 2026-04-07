@@ -46,16 +46,18 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
         <div className="absolute inset-0 z-0 pointer-events-none">
           <img src="/hero-bg.png" alt="" className="w-full h-full object-cover opacity-60 mix-blend-multiply" />
         </div>
-        <div className="relative z-10 max-w-5xl mx-auto px-6 py-20 md:py-28 flex flex-col items-center text-center">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-            <Activity className="w-8 h-8 text-primary-foreground" />
+        <div className="relative z-10 max-w-5xl mx-auto px-6 py-16 md:py-24 flex flex-col items-center text-center">
+          <div className="bg-white/75 backdrop-blur-sm rounded-3xl px-10 py-8 shadow-sm flex flex-col items-center text-center">
+            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+              <Activity className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-5 text-foreground">
+              Get Better <span className="text-primary">Together</span>
+            </h1>
+            <p className="text-xl md:text-2xl text-foreground/75 max-w-xl leading-relaxed font-medium">
+              Create fitness challenges, invite friends, log daily progress, and race to the top of the leaderboard.
+            </p>
           </div>
-          <h1 className="text-5xl md:text-6xl font-black tracking-tight mb-5 text-foreground">
-            Get Better <span className="text-primary">Together</span>
-          </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground max-w-xl leading-relaxed font-medium">
-            Create fitness challenges, invite friends, log daily progress, and race to the top of the leaderboard.
-          </p>
         </div>
       </div>
 
