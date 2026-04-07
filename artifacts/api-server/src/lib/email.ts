@@ -33,19 +33,17 @@ async function getCredentials(): Promise<{ apiKey: string; fromEmail: string }> 
 
     const conn = data.items?.[0];
     if (conn?.settings?.api_key) {
-      return {
-        apiKey: conn.settings.api_key,
-        fromEmail: conn.settings.from_email ?? "Get Better Together <onboarding@resend.dev>",
-      };
+      const rawFrom = conn.settings.from_email ?? "onboarding@resend.dev";
+      const fromEmail = rawFrom.includes("<") ? rawFrom : `Get Better Together <${rawFrom}>`;
+      return { apiKey: conn.settings.api_key, fromEmail };
     }
   }
 
   const envKey = process.env["RESEND_API_KEY"];
   if (envKey) {
-    return {
-      apiKey: envKey,
-      fromEmail: process.env["RESEND_FROM_EMAIL"] ?? "Get Better Together <onboarding@resend.dev>",
-    };
+    const rawFrom = process.env["RESEND_FROM_EMAIL"] ?? "onboarding@resend.dev";
+    const fromEmail = rawFrom.includes("<") ? rawFrom : `Get Better Together <${rawFrom}>`;
+    return { apiKey: envKey, fromEmail };
   }
 
   throw new Error("Resend not connected — set up the Resend integration or provide RESEND_API_KEY.");
