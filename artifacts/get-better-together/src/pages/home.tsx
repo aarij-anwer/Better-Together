@@ -55,7 +55,7 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
         <div className="absolute inset-0 z-0 pointer-events-none">
           <img src="/hero-bg.png" alt="" className="w-full h-full object-cover opacity-60 mix-blend-multiply" />
         </div>
-        <div className="relative z-10 max-w-5xl mx-auto px-6 py-16 md:py-24 flex flex-col items-center text-center">
+        <div className="relative z-10 max-w-5xl mx-auto px-6 py-10 md:py-24 flex flex-col items-center text-center">
           <div className="bg-white/75 backdrop-blur-sm rounded-3xl px-10 py-8 shadow-sm flex flex-col items-center text-center">
             <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mb-6 shadow-lg">
               <Activity className="w-8 h-8 text-primary-foreground" />
@@ -79,7 +79,7 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
       </div>
 
       {/* Live challenges */}
-      <div className="max-w-5xl mx-auto px-6 py-16">
+      <div className="max-w-5xl mx-auto px-6 py-8 md:py-16">
         {hasLive ? (
           <>
             <h2 className="text-3xl font-black tracking-tight text-center mb-3">Live right now</h2>
@@ -222,7 +222,7 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
 
       {/* Feature row */}
       <div className="bg-secondary/30 border-y">
-        <div className="max-w-5xl mx-auto px-6 py-16">
+        <div className="max-w-5xl mx-auto px-6 py-8 md:py-16">
           <div className="grid md:grid-cols-3 gap-8">
             {FEATURES.map(f => (
               <div key={f.title} className="flex flex-col items-start">
