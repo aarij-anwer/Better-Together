@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
-import { db, challengesTable, participationsTable, progressLogsTable, usersTable } from "@workspace/db";
+import { db, challengesTable, participationsTable, progressLogsTable, usersTable, notificationLogsTable } from "@workspace/db";
 import {
   CreateChallengeBody,
   LogProgressBody,
@@ -17,6 +17,9 @@ import {
 } from "../lib/challengeUtils";
 import { computeChallengeProgress, getCurrentDay } from "../lib/utils";
 import { generateDailyTargets } from "@workspace/shared";
+import { sendEmail, getAppUrl, isEmailEnabled } from "../lib/email";
+import { challengeStartedTemplate } from "../lib/emailTemplates";
+import { logger } from "../lib/logger";
 
 const router: IRouter = Router();
 
@@ -215,6 +218,35 @@ router.post("/challenges", async (req, res): Promise<void> => {
     userId: req.user.id,
     challengeId: challenge.id,
   });
+
+  // Fire challengeStarted email immediately — don't wait, don't block the response
+  void (async () => {
+    try {
+      if (!await isEmailEnabled()) return;
+      const [user] = await db
+        .select({ email: usersTable.email, firstName: usersTable.firstName })
+        .from(usersTable)
+        .where(eq(usersTable.id, req.user.id));
+      if (!user?.email) return;
+      const { subject, html } = challengeStartedTemplate({
+        firstName: user.firstName,
+        challengeTitle: challenge.title,
+        challengeUrl: `${getAppUrl()}/challenge/${challenge.slug ?? challenge.id}`,
+        durationDays: challenge.durationDays,
+      });
+      const sent = await sendEmail(user.email, subject, html);
+      if (sent) {
+        await db.insert(notificationLogsTable).values({
+          userId: req.user.id,
+          challengeId: challenge.id,
+          type: "challenge_started",
+          reminderNumber: 0,
+        }).onConflictDoNothing();
+      }
+    } catch (err) {
+      logger.error({ err }, "Failed to send challengeStarted email on creation");
+    }
+  })();
 
   const state = getChallengeState(challenge.startDate, challenge.durationDays, clientNowCreate);
 
