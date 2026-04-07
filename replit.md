@@ -133,6 +133,8 @@ After editing `lib/api-spec/openapi.yaml`:
 - **Demo challenge**: "10-Day Pushup Challenge" (slug: `demo-pushup-challenge`) seeded on server startup via `seedDemoChallenge.ts`; idempotent via slug check.
 - **Seed data**: 4 dummy anonymous users with pre-logged progress (Alex K., Jamie L., Morgan R., Sam T.)
 - **Guest flow**: Visitor clicks "Try it now" → `/challenge/demo-pushup-challenge` → enters name → `POST /guest-join` → guestId stored in `localStorage` as `gbt_guest_{slug}` → can log reps without auth
+- **Guest-to-account upgrade**: "Sign up to save progress" button → login with redirect back → auto-claims guest data (transfers participation + logs, updates display name if empty, cleans up guest user)
+- **Claim endpoint**: `POST /api/challenges/:id/claim-guest` — authenticated, takes `{ guestId }`, merges guest's participation/logs into auth user
 - **Security**: 100-guest cap per challenge; `/challenges/public` strips `inviteCode`/`createdById` from responses; guest identity via UUID (bearer model, acceptable for low-stakes demo)
 
 ### Frontend Auth
