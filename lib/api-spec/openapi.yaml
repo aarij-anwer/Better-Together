@@ -738,6 +738,10 @@ components:
           type: boolean
         restDayEnabled:
           type: boolean
+        isPublic:
+          type: boolean
+        noMax:
+          type: boolean
 
     ChallengeDetail:
       type: object

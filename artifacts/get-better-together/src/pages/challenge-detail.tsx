@@ -90,9 +90,9 @@ export default function ChallengeDetail() {
           const actualLogged = resp?.valueLogged ?? value;
           const isNowComplete = serverTarget > 0 && serverTotal >= serverTarget;
           const wasCapped = actualLogged < value;
-          if (wasAlreadyComplete || (wasCapped && actualLogged === 0)) {
+          if (!challenge.noMax && (wasAlreadyComplete || (wasCapped && actualLogged === 0))) {
             toast.info("You've already completed this challenge! Extra reps won't count toward the total.");
-          } else if (isNowComplete) {
+          } else if (!challenge.noMax && isNowComplete) {
             toast.success("Challenge target reached! Amazing work! 🎉");
           } else if (wasCapped) {
             toast.success(`Logged ${actualLogged} ${challenge.unit} (capped — only ${serverTarget - serverTotal + actualLogged} remaining)`);

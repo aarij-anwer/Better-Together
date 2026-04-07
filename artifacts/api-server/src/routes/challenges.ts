@@ -513,7 +513,7 @@ router.post("/challenges/:id/log", async (req, res): Promise<void> => {
       )
     );
 
-  if (challenge.type === "daily") {
+  if (challenge.type === "daily" && !challenge.noMax) {
     const currentDay = getCurrentDay(challenge.startDate, challenge.durationDays, clientNow);
     const daysUpToToday = challengeDailyTargets
       ? challengeDailyTargets.slice(0, currentDay)

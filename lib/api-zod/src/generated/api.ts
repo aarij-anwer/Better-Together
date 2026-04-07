@@ -156,6 +156,8 @@ export const ListChallengesResponseItem = zod.object({
   dailyTargets: zod.array(zod.number()).nullish(),
   randomizeReps: zod.boolean().optional(),
   restDayEnabled: zod.boolean().optional(),
+  isPublic: zod.boolean().optional(),
+  noMax: zod.boolean().optional(),
 });
 export const ListChallengesResponse = zod.array(ListChallengesResponseItem);
 

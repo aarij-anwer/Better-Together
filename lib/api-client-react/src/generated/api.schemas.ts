@@ -180,6 +180,8 @@ export interface ChallengeWithProgress {
   dailyTargets?: number[] | null;
   randomizeReps?: boolean;
   restDayEnabled?: boolean;
+  isPublic?: boolean;
+  noMax?: boolean;
 }
 
 export interface DayProgress {
