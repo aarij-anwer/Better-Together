@@ -239,9 +239,15 @@ export default function ChallengeDetail() {
                 <Flame className="w-5 h-5" /> {streak} Day Streak
               </div>
             ) : <div className="hidden md:block" />}
-            <Button onClick={copyInvite} variant="outline" className={`rounded-xl h-11 border-2 font-bold bg-card text-primary border-primary/20 hover:bg-primary/5 ${streak <= 0 ? 'col-span-2' : ''}`}>
-              <Share className="w-4 h-4 mr-2" /> Invite
-            </Button>
+            {user ? (
+              <Button onClick={copyInvite} variant="outline" className={`rounded-xl h-11 border-2 font-bold bg-card text-primary border-primary/20 hover:bg-primary/5 ${streak <= 0 ? 'col-span-2' : ''}`}>
+                <Share className="w-4 h-4 mr-2" /> Invite
+              </Button>
+            ) : (
+              <Button onClick={login} variant="outline" className={`rounded-xl h-11 border-2 font-bold bg-card text-primary border-primary/20 hover:bg-primary/5 ${streak <= 0 ? 'col-span-2' : ''}`}>
+                <UserPlus className="w-4 h-4 mr-2" /> Sign up to save progress
+              </Button>
+            )}
           </div>
           <div>
             <div className="flex items-center gap-3 mb-2">
