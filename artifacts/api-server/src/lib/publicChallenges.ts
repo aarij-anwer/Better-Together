@@ -32,20 +32,9 @@ export async function seedPublicChallenge(): Promise<SeedResult> {
 
   const now = new Date();
 
-  // Idempotency: if ANY upcoming public challenge exists, there is nothing to do.
-  // This ensures repeated runs on the same day are true no-ops.
-  const [anyUpcoming] = await db
-    .select({ id: challengesTable.id })
-    .from(challengesTable)
-    .where(and(eq(challengesTable.isPublic, true), gt(challengesTable.startDate, now)))
-    .limit(1);
-
-  if (anyUpcoming) {
-    return { created: false, reason: "An upcoming public challenge already exists" };
-  }
-
-  // Determine rotation from the most recent STARTED (already begun) public challenge.
-  // Anchoring to started challenges ensures this is stable across repeated runs.
+  // Determine next activity from the most recent STARTED (startDate <= now) public
+  // challenge. Anchoring to already-started challenges keeps this stable across
+  // repeated same-day runs because a just-created future challenge is not counted.
   const [lastStarted] = await db
     .select({ activityType: challengesTable.activityType })
     .from(challengesTable)
@@ -58,6 +47,28 @@ export async function seedPublicChallenge(): Promise<SeedResult> {
     : -1;
   const nextIndex = (lastIndex + 1) % ROTATION.length;
   const activity = ROTATION[nextIndex];
+
+  // Idempotency: skip only if an upcoming challenge for this specific next activity
+  // already exists. This allows off-sequence public challenges to coexist without
+  // blocking the required rotation, while still preventing duplicates on repeat runs.
+  const [existingForActivity] = await db
+    .select({ id: challengesTable.id })
+    .from(challengesTable)
+    .where(
+      and(
+        eq(challengesTable.isPublic, true),
+        eq(challengesTable.activityType, activity.activityType),
+        gt(challengesTable.startDate, now),
+      ),
+    )
+    .limit(1);
+
+  if (existingForActivity) {
+    return {
+      created: false,
+      reason: `Upcoming public ${activity.activityType} challenge already scheduled`,
+    };
+  }
 
   // Start date: DAYS_AHEAD days from today, midnight UTC
   const startDate = new Date(Date.UTC(
