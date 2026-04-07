@@ -182,6 +182,9 @@ export default function ChallengeDetail() {
               {challenge.randomizeReps && (
                 <span onClick={() => toast.info("Varying daily targets prevent plateaus and keep your muscles guessing.")} className="flex items-center gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1.5 rounded-lg shadow-sm cursor-pointer">Variable Targets 🔥</span>
               )}
+              {challenge.noMax && (
+                <span onClick={() => toast.info("You can log as many reps as you'd like for a day.")} className="flex items-center gap-1.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white px-3 py-1.5 rounded-lg shadow-sm cursor-pointer">No Max ∞</span>
+              )}
             </div>
           </div>
         </div>
