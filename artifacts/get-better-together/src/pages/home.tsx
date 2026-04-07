@@ -244,7 +244,7 @@ function Welcome({ onLogin }: { onLogin: () => void }) {
         </div>
         <h2 className="text-4xl font-black tracking-tight mb-4">Ready to start your challenge?</h2>
         <p className="text-xl text-muted-foreground font-medium mb-8">Join thousands of people pushing themselves further, together.</p>
-        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-center">
+        <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto items-center justify-center">
           <Button size="lg" className="h-14 w-full sm:w-52 rounded-2xl text-lg font-bold shadow-lg" onClick={() => setLocation("/challenge/demo-pushup-challenge")}>
             Try it now <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
