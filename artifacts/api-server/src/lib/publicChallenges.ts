@@ -1,5 +1,5 @@
 import { asc, desc, eq, and, gt } from "drizzle-orm";
-import { db, usersTable, challengesTable, participationsTable } from "@workspace/db";
+import { db, usersTable, challengesTable } from "@workspace/db";
 import { generateDailyTargets } from "@workspace/shared";
 import { generateSlug, generateInviteCode, getUnitForActivity } from "./challengeUtils";
 import { logger } from "./logger";
@@ -30,20 +30,7 @@ export async function seedPublicChallenge(): Promise<SeedResult> {
     return { created: false, reason: "No users registered yet" };
   }
 
-  const now = new Date();
-
-  // Idempotency: if any public challenge hasn't started yet, skip
-  const [existing] = await db
-    .select({ id: challengesTable.id })
-    .from(challengesTable)
-    .where(and(eq(challengesTable.isPublic, true), gt(challengesTable.startDate, now)))
-    .limit(1);
-
-  if (existing) {
-    return { created: false, reason: "An upcoming public challenge already exists" };
-  }
-
-  // Determine next activity by looking at the most recent public challenge
+  // Determine next activity in rotation based on the most recent public challenge
   const [lastPublic] = await db
     .select({ activityType: challengesTable.activityType })
     .from(challengesTable)
@@ -56,6 +43,27 @@ export async function seedPublicChallenge(): Promise<SeedResult> {
     : -1;
   const nextIndex = (lastIndex + 1) % ROTATION.length;
   const activity = ROTATION[nextIndex];
+
+  // Idempotency: skip if an upcoming public challenge for this specific activity already exists
+  const now = new Date();
+  const [existing] = await db
+    .select({ id: challengesTable.id })
+    .from(challengesTable)
+    .where(
+      and(
+        eq(challengesTable.isPublic, true),
+        eq(challengesTable.activityType, activity.activityType),
+        gt(challengesTable.startDate, now),
+      ),
+    )
+    .limit(1);
+
+  if (existing) {
+    return {
+      created: false,
+      reason: `Upcoming public ${activity.activityType} challenge already exists`,
+    };
+  }
 
   // Start date: DAYS_AHEAD days from today, midnight UTC
   const startDate = new Date(Date.UTC(
@@ -114,12 +122,6 @@ export async function seedPublicChallenge(): Promise<SeedResult> {
       noMax: false,
     })
     .returning();
-
-  // Auto-join the first user so they participate
-  await db
-    .insert(participationsTable)
-    .values({ userId: firstUser.id, challengeId: challenge.id })
-    .onConflictDoNothing();
 
   logger.info(
     { challengeId: challenge.id, slug: challenge.slug, activity: activity.activityType, startDate },

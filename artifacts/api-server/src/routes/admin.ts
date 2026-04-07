@@ -79,14 +79,9 @@ router.post("/admin/challenges/seed", async (req: Request, res: Response): Promi
     return;
   }
 
-  const [firstUserId, isCreator] = await Promise.all([
-    getFirstUserId(),
-    isChallengeCreator(currentUserId),
-  ]);
-
-  const isAuthorized = currentUserId === firstUserId || isCreator;
-  if (!isAuthorized) {
-    res.status(403).json({ error: "Forbidden — only challenge creators or the app owner can seed challenges." });
+  const firstUserId = await getFirstUserId();
+  if (currentUserId !== firstUserId) {
+    res.status(403).json({ error: "Forbidden — only the app owner can seed public challenges." });
     return;
   }
 
