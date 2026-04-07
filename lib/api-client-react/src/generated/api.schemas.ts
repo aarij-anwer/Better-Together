@@ -19,6 +19,7 @@ export interface AuthUser {
   lastName: string | null;
   /** @nullable */
   profileImageUrl: string | null;
+  isAdmin?: boolean;
 }
 
 export interface AuthUserEnvelope {
@@ -97,6 +98,8 @@ export interface CreateChallengeBody {
   startDate?: string;
   randomizeReps?: boolean;
   restDayEnabled?: boolean;
+  isPublic?: boolean;
+  noMax?: boolean;
   dailyTargets?: number[];
 }
 
@@ -134,6 +137,8 @@ export interface Challenge {
   dailyTargets?: number[] | null;
   randomizeReps?: boolean;
   restDayEnabled?: boolean;
+  isPublic?: boolean;
+  noMax?: boolean;
 }
 
 export type ChallengeWithProgressType =

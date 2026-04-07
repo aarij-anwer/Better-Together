@@ -26,5 +26,7 @@ export interface CreateChallengeBody {
   startDate?: Date;
   randomizeReps?: boolean;
   restDayEnabled?: boolean;
+  isPublic?: boolean;
+  noMax?: boolean;
   dailyTargets?: number[];
 }

@@ -140,11 +140,12 @@ router.post("/challenges", async (req, res): Promise<void> => {
     return;
   }
 
-  const { title, activityType, type, targetValue, durationDays, startDate, randomizeReps, restDayEnabled, dailyTargets: providedDailyTargets } = parsed.data;
+  const { title, activityType, type, targetValue, durationDays, startDate, randomizeReps, restDayEnabled, dailyTargets: providedDailyTargets, isPublic, noMax } = parsed.data;
   const unit = getUnitForActivity(activityType);
 
   const shouldRandomize = randomizeReps ?? false;
   const shouldRestDay = restDayEnabled ?? false;
+  const shouldNoMax = noMax ?? false;
   let resolvedDailyTargets: number[] | null = providedDailyTargets ?? null;
 
   if (resolvedDailyTargets) {
@@ -195,6 +196,13 @@ router.post("/challenges", async (req, res): Promise<void> => {
   const resolvedStartDate = startDate ? new Date(startDate) : clientNowCreate;
   const startOfDay = new Date(Date.UTC(resolvedStartDate.getFullYear(), resolvedStartDate.getMonth(), resolvedStartDate.getDate()));
 
+  // Only admins can create public challenges
+  let shouldBePublic = false;
+  if (isPublic) {
+    const [creator] = await db.select({ isAdmin: usersTable.isAdmin }).from(usersTable).where(eq(usersTable.id, req.user.id));
+    shouldBePublic = creator?.isAdmin ?? false;
+  }
+
   const [challenge] = await db
     .insert(challengesTable)
     .values({
@@ -211,6 +219,8 @@ router.post("/challenges", async (req, res): Promise<void> => {
       dailyTargets: resolvedDailyTargets,
       randomizeReps: shouldRandomize,
       restDayEnabled: shouldRestDay,
+      isPublic: shouldBePublic,
+      noMax: shouldNoMax,
     })
     .returning();
 

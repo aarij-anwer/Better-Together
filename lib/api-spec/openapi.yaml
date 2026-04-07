@@ -548,6 +548,8 @@ components:
           type: [string, 'null']
         profileImageUrl:
           type: [string, 'null']
+        isAdmin:
+          type: boolean
     AuthUserEnvelope:
       type: object
       required: [user]
@@ -624,6 +626,10 @@ components:
           type: boolean
         restDayEnabled:
           type: boolean
+        isPublic:
+          type: boolean
+        noMax:
+          type: boolean
         dailyTargets:
           type: array
           items:
@@ -673,6 +679,10 @@ components:
         randomizeReps:
           type: boolean
         restDayEnabled:
+          type: boolean
+        isPublic:
+          type: boolean
+        noMax:
           type: boolean
 
     ChallengeWithProgress:

@@ -112,10 +112,18 @@ async function upsertUser(claims: Record<string, unknown>) {
   return user;
 }
 
-router.get("/auth/user", (req: Request, res: Response) => {
+router.get("/auth/user", async (req: Request, res: Response) => {
+  if (!req.isAuthenticated()) {
+    res.json(GetCurrentAuthUserResponse.parse({ user: null }));
+    return;
+  }
+  // Re-fetch from DB to pick up isAdmin and other fields that may have changed since login
+  const [dbUser] = await db.select().from(usersTable).where(eq(usersTable.id, req.user.id));
   res.json(
     GetCurrentAuthUserResponse.parse({
-      user: req.isAuthenticated() ? req.user : null,
+      user: dbUser
+        ? { ...req.user, isAdmin: dbUser.isAdmin }
+        : req.user,
     }),
   );
 });

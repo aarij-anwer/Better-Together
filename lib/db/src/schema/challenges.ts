@@ -19,6 +19,8 @@ export const challengesTable = pgTable("challenges", {
   dailyTargets: jsonb("daily_targets").$type<number[]>(),
   randomizeReps: boolean("randomize_reps").notNull().default(false),
   restDayEnabled: boolean("rest_day_enabled").notNull().default(false),
+  isPublic: boolean("is_public").notNull().default(false),
+  noMax: boolean("no_max").notNull().default(false),
 });
 
 export const insertChallengeSchema = createInsertSchema(challengesTable).omit({ id: true, createdAt: true });

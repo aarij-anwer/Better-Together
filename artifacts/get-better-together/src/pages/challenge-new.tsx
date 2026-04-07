@@ -4,6 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useCreateChallenge } from "@workspace/api-client-react";
+import { useAuth } from "@workspace/replit-auth-web";
 import { Layout } from "@/components/layout";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -30,8 +31,11 @@ const schema = z.object({
 export default function ChallengeNew() {
   const [, setLocation] = useLocation();
   const createChallenge = useCreateChallenge();
+  const { user } = useAuth();
   const [randomizeReps, setRandomizeReps] = useState(false);
   const [restDayEnabled, setRestDayEnabled] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
+  const [noMax, setNoMax] = useState(false);
   const [customizeOpen, setCustomizeOpen] = useState(false);
   
   const form = useForm<z.infer<typeof schema>>({
@@ -78,6 +82,8 @@ export default function ChallengeNew() {
         startDate: data.startDate ? `${data.startDate.getFullYear()}-${String(data.startDate.getMonth() + 1).padStart(2, '0')}-${String(data.startDate.getDate()).padStart(2, '0')}` : undefined,
         randomizeReps: randomizeReps || undefined,
         restDayEnabled: restDayEnabled || undefined,
+        isPublic: isPublic || undefined,
+        noMax: noMax || undefined,
       }
     }, {
       onSuccess: (challenge) => {
@@ -212,6 +218,20 @@ export default function ChallengeNew() {
                   )}
                 />
 
+                {user?.isAdmin && (
+                  <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl border-2 border-primary/20 bg-primary/5 hover:bg-primary/10 transition-colors">
+                    <Checkbox
+                      checked={isPublic}
+                      onCheckedChange={(checked) => setIsPublic(checked === true)}
+                      className="mt-0.5"
+                    />
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm font-bold">Public challenge</span>
+                      <span className="text-xs text-muted-foreground">Anyone can discover and join this challenge — no invite code needed</span>
+                    </div>
+                  </label>
+                )}
+
                 {showCustomize && (
                   <Collapsible open={customizeOpen} onOpenChange={setCustomizeOpen}>
                     <CollapsibleTrigger asChild>
@@ -244,6 +264,17 @@ export default function ChallengeNew() {
                         <div className="flex flex-col gap-0.5">
                           <span className="text-sm font-bold">Rest day</span>
                           <span className="text-xs text-muted-foreground">Each 7th day of the challenge is a rest day</span>
+                        </div>
+                      </label>
+                      <label className="flex items-start gap-3 cursor-pointer p-3 rounded-xl hover:bg-muted/50 transition-colors">
+                        <Checkbox
+                          checked={noMax}
+                          onCheckedChange={(checked) => setNoMax(checked === true)}
+                          className="mt-0.5"
+                        />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-sm font-bold">No max</span>
+                          <span className="text-xs text-muted-foreground">Participants can log beyond the daily target — great for open-ended activities</span>
                         </div>
                       </label>
                     </CollapsibleContent>

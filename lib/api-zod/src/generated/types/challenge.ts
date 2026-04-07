@@ -26,4 +26,6 @@ export interface Challenge {
   dailyTargets?: number[] | null;
   randomizeReps?: boolean;
   restDayEnabled?: boolean;
+  isPublic?: boolean;
+  noMax?: boolean;
 }

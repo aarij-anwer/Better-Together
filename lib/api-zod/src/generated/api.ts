@@ -33,6 +33,7 @@ export const GetCurrentAuthUserResponse = zod.object({
       firstName: zod.string().nullable(),
       lastName: zod.string().nullable(),
       profileImageUrl: zod.string().nullable(),
+      isAdmin: zod.boolean().optional(),
     }),
     zod.null(),
   ]),
@@ -120,6 +121,7 @@ export const UpdateProfileResponse = zod.object({
   firstName: zod.string().nullable(),
   lastName: zod.string().nullable(),
   profileImageUrl: zod.string().nullable(),
+  isAdmin: zod.boolean().optional(),
 });
 
 /**
@@ -195,6 +197,8 @@ export const CreateChallengeBody = zod.object({
   startDate: zod.coerce.date().optional(),
   randomizeReps: zod.boolean().optional(),
   restDayEnabled: zod.boolean().optional(),
+  isPublic: zod.boolean().optional(),
+  noMax: zod.boolean().optional(),
   dailyTargets: zod.array(zod.number()).optional(),
 });
 
@@ -231,6 +235,8 @@ export const GetChallengeResponse = zod.object({
     dailyTargets: zod.array(zod.number()).nullish(),
     randomizeReps: zod.boolean().optional(),
     restDayEnabled: zod.boolean().optional(),
+    isPublic: zod.boolean().optional(),
+    noMax: zod.boolean().optional(),
   }),
   userProgress: zod.object({
     totalLogged: zod.number(),
