@@ -172,65 +172,53 @@ export async function runNotifications(): Promise<NotificationSummary> {
         }
       }
 
-      if (isActive) {
-        const [{ value: logCount }] = await db
-          .select({ value: count() })
-          .from(progressLogsTable)
-          .where(
-            and(
-              eq(progressLogsTable.userId, userId),
-              eq(progressLogsTable.challengeId, challenge.id),
-            ),
-          );
+      if (!isActive) continue;
 
-        if (logCount > 0) continue;
+      const dayIndex = Math.floor(
+        (todayUTC.getTime() - startDate.getTime()) / 86400_000,
+      );
+      const daysLeft = challenge.durationDays - dayIndex;
 
-        const dayIndex = Math.floor(
-          (todayUTC.getTime() - startDate.getTime()) / 86400_000,
+      const reminderDays = getReminderDays(challenge.durationDays);
+      const reminderDayIndex = reminderDays.findIndex((d) => d === dayIndex);
+      if (reminderDayIndex === -1) continue;
+
+      const reminderNumber = reminderDayIndex + 1;
+      if (reminderNumber > 3) continue;
+
+      const [existing] = await db
+        .select()
+        .from(notificationLogsTable)
+        .where(
+          and(
+            eq(notificationLogsTable.userId, userId),
+            eq(notificationLogsTable.challengeId, challenge.id),
+            eq(notificationLogsTable.type, "not_participated_reminder"),
+            eq(notificationLogsTable.reminderNumber, reminderNumber),
+          ),
         );
-        const daysLeft = challenge.durationDays - dayIndex;
 
-        const reminderDays = getReminderDays(challenge.durationDays);
-        const reminderDayIndex = reminderDays.findIndex((d) => d === dayIndex);
-        if (reminderDayIndex === -1) continue;
+      if (!existing) {
+        const { subject, html } = notParticipatedReminderTemplate({
+          firstName: user.firstName,
+          challengeTitle: challenge.title,
+          challengeUrl,
+          reminderNumber,
+          daysElapsed: dayIndex,
+          daysLeft,
+        });
 
-        const reminderNumber = reminderDayIndex + 1;
-        if (reminderNumber > 3) continue;
-
-        const [existing] = await db
-          .select()
-          .from(notificationLogsTable)
-          .where(
-            and(
-              eq(notificationLogsTable.userId, userId),
-              eq(notificationLogsTable.challengeId, challenge.id),
-              eq(notificationLogsTable.type, "not_participated_reminder"),
-              eq(notificationLogsTable.reminderNumber, reminderNumber),
-            ),
-          );
-
-        if (!existing) {
-          const { subject, html } = notParticipatedReminderTemplate({
-            firstName: user.firstName,
-            challengeTitle: challenge.title,
-            challengeUrl,
+        const sent = await sendEmail(user.email, subject, html);
+        if (sent) {
+          await db.insert(notificationLogsTable).values({
+            userId,
+            challengeId: challenge.id,
+            type: "not_participated_reminder",
             reminderNumber,
-            daysElapsed: dayIndex,
-            daysLeft,
-          });
-
-          const sent = await sendEmail(user.email, subject, html);
-          if (sent) {
-            await db.insert(notificationLogsTable).values({
-              userId,
-              challengeId: challenge.id,
-              type: "not_participated_reminder",
-              reminderNumber,
-            }).onConflictDoNothing();
-            summary.notParticipatedReminder++;
-          } else {
-            summary.errors++;
-          }
+          }).onConflictDoNothing();
+          summary.notParticipatedReminder++;
+        } else {
+          summary.errors++;
         }
       }
     }
