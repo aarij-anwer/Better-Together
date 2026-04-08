@@ -8,8 +8,6 @@ import {
 } from "@workspace/api-zod";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { sendEmail, getAppUrl } from "../lib/email";
-import { welcomeTemplate } from "../lib/emailTemplates";
 import { logger } from "../lib/logger";
 import {
   clearSession,
@@ -90,7 +88,6 @@ async function upsertUser(claims: Record<string, unknown>) {
   };
 
   const [existing] = await db.select().from(usersTable).where(eq(usersTable.id, userData.id));
-  const isNewUser = !existing;
   const fallbackName = splitEmailName(userData.email);
   const resolvedFirstName = existing?.firstName ?? userData.firstName ?? fallbackName.firstName;
   const resolvedLastName = existing?.lastName ?? userData.lastName ?? fallbackName.lastName;
@@ -113,17 +110,6 @@ async function upsertUser(claims: Record<string, unknown>) {
       },
     })
     .returning();
-
-  if (isNewUser && user.email) {
-    const appUrl = getAppUrl();
-    const { subject, html } = welcomeTemplate({
-      firstName: user.firstName,
-      dashboardUrl: appUrl,
-    });
-    sendEmail(user.email, subject, html).catch((err) => {
-      logger.error({ err, userId: user.id }, "Failed to send welcome email");
-    });
-  }
 
   return user;
 }
