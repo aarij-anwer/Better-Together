@@ -27,27 +27,41 @@ const OIDC_COOKIE_TTL = 10 * 60 * 1000;
 
 const router: IRouter = Router();
 
+function getForwardedProto(req: Request): string | undefined {
+  const forwardedProto = req.headers["x-forwarded-proto"];
+  const proto = Array.isArray(forwardedProto)
+    ? forwardedProto[0]
+    : forwardedProto;
+  if (typeof proto !== "string") return undefined;
+  const normalized = proto.split(",")[0]?.trim().toLowerCase();
+  return normalized || undefined;
+}
+
 function getOrigin(req: Request): string {
-  const proto = req.headers["x-forwarded-proto"] || "https";
+  const proto = getForwardedProto(req) ?? (req.secure ? "https" : "http");
   const host =
     req.headers["x-forwarded-host"] || req.headers["host"] || "localhost";
   return `${proto}://${host}`;
 }
 
-function setSessionCookie(res: Response, sid: string) {
+function isHttpsRequest(req: Request): boolean {
+  return getForwardedProto(req) === "https" || req.secure;
+}
+
+function setSessionCookie(req: Request, res: Response, sid: string) {
   res.cookie(SESSION_COOKIE, sid, {
     httpOnly: true,
-    secure: true,
+    secure: isHttpsRequest(req),
     sameSite: "lax",
     path: "/",
     maxAge: SESSION_TTL,
   });
 }
 
-function setOidcCookie(res: Response, name: string, value: string) {
+function setOidcCookie(req: Request, res: Response, name: string, value: string) {
   res.cookie(name, value, {
     httpOnly: true,
-    secure: true,
+    secure: isHttpsRequest(req),
     sameSite: "lax",
     path: "/",
     maxAge: OIDC_COOKIE_TTL,
@@ -182,10 +196,10 @@ router.get("/login", async (req: Request, res: Response) => {
     nonce,
   });
 
-  setOidcCookie(res, "code_verifier", codeVerifier);
-  setOidcCookie(res, "nonce", nonce);
-  setOidcCookie(res, "state", state);
-  setOidcCookie(res, "return_to", returnTo);
+  setOidcCookie(req, res, "code_verifier", codeVerifier);
+  setOidcCookie(req, res, "nonce", nonce);
+  setOidcCookie(req, res, "state", state);
+  setOidcCookie(req, res, "return_to", returnTo);
 
   res.redirect(redirectTo.href);
 });
@@ -254,7 +268,7 @@ router.get("/callback", async (req: Request, res: Response) => {
   };
 
   const sid = await createSession(sessionData);
-  setSessionCookie(res, sid);
+  setSessionCookie(req, res, sid);
   res.redirect(returnTo);
 });
 
